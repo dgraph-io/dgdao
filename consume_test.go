@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/matthewmcneely/modusgraph"
+	"github.com/dgraph-io/dgdao"
 )
 
 type consumeJTI struct {
@@ -18,9 +18,9 @@ type consumeJTI struct {
 	JTI   string   `json:"jti,omitempty" dgraph:"index=hash upsert unique"`
 }
 
-func newConsumeClient(t *testing.T) modusgraph.Client {
+func newConsumeClient(t *testing.T) dgdao.Client {
 	t.Helper()
-	conn, err := modusgraph.NewClient("file://"+t.TempDir(), modusgraph.WithAutoSchema(true))
+	conn, err := dgdao.NewClient("file://"+t.TempDir(), dgdao.WithAutoSchema(true))
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}

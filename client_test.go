@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	mg "github.com/matthewmcneely/modusgraph"
+	mg "github.com/dgraph-io/dgdao"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,15 +30,15 @@ func TestClientPool(t *testing.T) {
 		},
 		{
 			name: "ClientPoolWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skip("Skipping test as MODUSGRAPH_TEST_ADDR is not set")
+				t.Skip("Skipping test as DGDAO_TEST_ADDR is not set")
 			}
 
 			// Create a client with pool size 10
@@ -127,15 +127,15 @@ func TestClientPoolStress(t *testing.T) {
 		},
 		{
 			name: "ClientPoolStressWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skip("Skipping test as MODUSGRAPH_TEST_ADDR is not set")
+				t.Skip("Skipping test as DGDAO_TEST_ADDR is not set")
 			}
 
 			// Create a client with pool size 10
@@ -222,15 +222,15 @@ func TestClientPoolMisuse(t *testing.T) {
 		},
 		{
 			name: "ClientPoolMisuseWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skip("Skipping test as MODUSGRAPH_TEST_ADDR is not set")
+				t.Skip("Skipping test as DGDAO_TEST_ADDR is not set")
 			}
 
 			// Create a client with pool size 10
@@ -263,20 +263,20 @@ func TestLocalClientSingleton(t *testing.T) {
 
 func TestRemoteClientAccess(t *testing.T) {
 
-	if os.Getenv("MODUSGRAPH_TEST_ADDR") == "" {
-		t.Skip("Skipping test as MODUSGRAPH_TEST_ADDR is not set")
+	if os.Getenv("DGDAO_TEST_ADDR") == "" {
+		t.Skip("Skipping test as DGDAO_TEST_ADDR is not set")
 	}
 
-	client, err := mg.NewClient("dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"))
+	client, err := mg.NewClient("dgraph://" + os.Getenv("DGDAO_TEST_ADDR"))
 	require.NoError(t, err)
 	defer client.Close()
 
-	client2, err := mg.NewClient("dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"))
+	client2, err := mg.NewClient("dgraph://" + os.Getenv("DGDAO_TEST_ADDR"))
 	require.NoError(t, err)
 	require.Equal(t, client, client2, "Expected the same client instance")
 	defer client2.Close()
 
-	client3, err := mg.NewClient("dgraph://"+os.Getenv("MODUSGRAPH_TEST_ADDR"), mg.WithAutoSchema(true))
+	client3, err := mg.NewClient("dgraph://"+os.Getenv("DGDAO_TEST_ADDR"), mg.WithAutoSchema(true))
 	require.NoError(t, err)
 	require.NotEqual(t, client, client3, "Expected a different client instance")
 	defer client3.Close()
@@ -317,15 +317,15 @@ func TestClientValidator(t *testing.T) {
 		},
 		{
 			name: "ValidatorWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skip("Skipping test as MODUSGRAPH_TEST_ADDR is not set")
+				t.Skip("Skipping test as DGDAO_TEST_ADDR is not set")
 			}
 
 			// Create a validator instance

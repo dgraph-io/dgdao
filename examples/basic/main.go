@@ -15,9 +15,9 @@ import (
 	"strconv"
 	"strings"
 
+	mg "github.com/dgraph-io/dgdao"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/stdr"
-	mg "github.com/matthewmcneely/modusgraph"
 )
 
 type Thread struct {
@@ -31,8 +31,8 @@ type Thread struct {
 
 func main() {
 	// Define command line flags
-	dirFlag := flag.String("dir", "", "Directory where modusGraph will initialize")
-	addrFlag := flag.String("addr", "", "Hostname/port where modusGraph will access for I/O")
+	dirFlag := flag.String("dir", "", "Directory where dgdao will initialize")
+	addrFlag := flag.String("addr", "", "Hostname/port where dgdao will access for I/O")
 
 	// Command flags
 	cmdFlag := flag.String("cmd", "create", "Command to execute: create, update, delete, get, list")
@@ -80,11 +80,11 @@ func main() {
 		// Using directory mode
 		dirPath := filepath.Clean(*dirFlag)
 		endpoint = fmt.Sprintf("file://%s", dirPath)
-		fmt.Printf("Initializing modusGraph with directory: %s\n", endpoint)
+		fmt.Printf("Initializing dgdao with directory: %s\n", endpoint)
 	} else {
 		// Using Dgraph cluster mode
 		endpoint = fmt.Sprintf("dgraph://%s", *addrFlag)
-		fmt.Printf("Initializing modusGraph with address: %s\n", endpoint)
+		fmt.Printf("Initializing dgdao with address: %s\n", endpoint)
 	}
 
 	// Initialize standard logger with stdr
@@ -99,19 +99,19 @@ func main() {
 		stdr.SetVerbosity(val)
 	}
 
-	// Initialize modusGraph client with logger
+	// Initialize dgdao client with logger
 	client, err := mg.NewClient(endpoint,
 		// Auto schema will update the schema each time a mutation event is received
 		mg.WithAutoSchema(true),
 		// Logger will log events to the console
 		mg.WithLogger(logger))
 	if err != nil {
-		logger.Error(err, "Failed to initialize modusGraph client")
+		logger.Error(err, "Failed to initialize dgdao client")
 		os.Exit(1)
 	}
 	defer client.Close()
 
-	logger.Info("modusGraph client initialized successfully")
+	logger.Info("dgdao client initialized successfully")
 
 	// Execute the requested command
 	var cmdErr error

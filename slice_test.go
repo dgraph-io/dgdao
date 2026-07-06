@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -54,15 +54,15 @@ func TestValueTypeSliceInsertAndQuery(t *testing.T) {
 		},
 		{
 			name: "ValueTypeSliceWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -125,15 +125,15 @@ func TestPointerTypeSliceInsertAndQuery(t *testing.T) {
 		},
 		{
 			name: "PointerTypeSliceWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -182,7 +182,7 @@ func TestPointerTypeSliceInsertAndQuery(t *testing.T) {
 }
 
 // TestValueTypeSliceParity compares behavior of []T and []*T to confirm they
-// produce equivalent results when round-tripped through modusgraph.
+// produce equivalent results when round-tripped through dgdao.
 func TestValueTypeSliceParity(t *testing.T) {
 	testCases := []struct {
 		name string
@@ -195,15 +195,15 @@ func TestValueTypeSliceParity(t *testing.T) {
 		},
 		{
 			name: "SliceParityWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -294,15 +294,15 @@ func TestValueTypeSliceUpdate(t *testing.T) {
 		},
 		{
 			name: "ValueTypeSliceUpdateWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -356,15 +356,15 @@ func TestValueTypeSliceEmpty(t *testing.T) {
 		},
 		{
 			name: "EmptyValueSliceWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 

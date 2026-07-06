@@ -20,7 +20,7 @@ type Span interface {
 // Tracer starts a Span around a typed-layer database operation. The typed
 // client calls the installed Tracer for every DB call; the default is a no-op,
 // so the typed package itself carries no tracing dependency. Install a real
-// tracer — for example github.com/mlwelles/modusgraph-telemetry's OpenTelemetry
+// tracer — for example github.com/mlwelles/dgdao-telemetry's OpenTelemetry
 // tracer — with SetTracer.
 type Tracer interface {
 	// StartSpan begins a span for operation op (for example "get") on the named

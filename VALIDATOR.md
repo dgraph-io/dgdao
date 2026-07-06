@@ -1,6 +1,6 @@
 # Validator Integration
 
-ModusGraph supports struct validation through the `StructValidator` interface. This interface is
+dgdao supports struct validation through the `StructValidator` interface. This interface is
 compatible with the popular
 [github.com/go-playground/validator/v10](https://github.com/go-playground/validator) package, but
 you can also provide your own implementation.
@@ -20,7 +20,7 @@ type StructValidator interface {
 ```go
 import (
     "github.com/go-playground/validator/v10"
-    mg "github.com/matthewmcneely/modusgraph"
+    mg "github.com/dgraph-io/dgdao"
 )
 
 // Create a validator instance (implements StructValidator)

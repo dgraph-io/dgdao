@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
 	"fmt"
 
-	mg "github.com/matthewmcneely/modusgraph"
+	mg "github.com/dgraph-io/dgdao"
 )
 
 // Token is keyed by a unique jti predicate. The upsert+unique tags let

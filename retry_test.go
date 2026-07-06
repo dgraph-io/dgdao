@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgraph-io/dgdao"
 	"github.com/dgraph-io/dgo/v250"
-	"github.com/matthewmcneely/modusgraph"
 	pkgerrors "github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,15 +44,15 @@ func TestConcurrentInsertsWithRetry(t *testing.T) {
 		},
 		{
 			name: "DgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -75,7 +75,7 @@ func TestConcurrentInsertsWithRetry(t *testing.T) {
 							Name:  fmt.Sprintf("entity-%d-%d", w, i),
 							Value: w*entitiesPerWorker + i,
 						}
-						err := client.WithRetry(ctx, modusgraph.DefaultRetryPolicy, func() error {
+						err := client.WithRetry(ctx, dgdao.DefaultRetryPolicy, func() error {
 							return client.Insert(ctx, entity)
 						})
 						if err != nil {
@@ -106,7 +106,7 @@ func TestWithRetryContextCancellation(t *testing.T) {
 	defer cancel()
 
 	// Use a policy with a long delay so the context expires during backoff.
-	slowPolicy := modusgraph.RetryPolicy{
+	slowPolicy := dgdao.RetryPolicy{
 		MaxRetries: 10,
 		BaseDelay:  1 * time.Second,
 		MaxDelay:   5 * time.Second,
@@ -131,7 +131,7 @@ func TestWithRetryContextCancellation(t *testing.T) {
 func TestRetryPolicyDelay(t *testing.T) {
 	// Use the public struct fields to verify delay behavior indirectly
 	// by checking that DefaultRetryPolicy has the expected values.
-	p := modusgraph.DefaultRetryPolicy
+	p := dgdao.DefaultRetryPolicy
 	assert.Equal(t, 10, p.MaxRetries)
 	assert.Equal(t, 100*time.Millisecond, p.BaseDelay)
 	assert.Equal(t, 5*time.Second, p.MaxDelay)
@@ -148,7 +148,7 @@ func TestWithRetryNonAbortError(t *testing.T) {
 	callCount := 0
 	expectedErr := fmt.Errorf("not an abort error")
 
-	err := client.WithRetry(context.Background(), modusgraph.DefaultRetryPolicy, func() error {
+	err := client.WithRetry(context.Background(), dgdao.DefaultRetryPolicy, func() error {
 		callCount++
 		return expectedErr
 	})
@@ -165,7 +165,7 @@ func TestWithRetrySucceedsFirstTry(t *testing.T) {
 	defer cleanup()
 
 	callCount := 0
-	err := client.WithRetry(context.Background(), modusgraph.DefaultRetryPolicy, func() error {
+	err := client.WithRetry(context.Background(), dgdao.DefaultRetryPolicy, func() error {
 		callCount++
 		return nil
 	})
@@ -181,7 +181,7 @@ func TestWithRetryMaxRetriesZero(t *testing.T) {
 	client, cleanup := CreateTestClient(t, uri)
 	defer cleanup()
 
-	policy := modusgraph.RetryPolicy{MaxRetries: 0}
+	policy := dgdao.RetryPolicy{MaxRetries: 0}
 	callCount := 0
 
 	err := client.WithRetry(context.Background(), policy, func() error {
@@ -201,7 +201,7 @@ func TestWithRetryNegativeMaxRetries(t *testing.T) {
 	client, cleanup := CreateTestClient(t, uri)
 	defer cleanup()
 
-	policy := modusgraph.RetryPolicy{MaxRetries: -1}
+	policy := dgdao.RetryPolicy{MaxRetries: -1}
 	callCount := 0
 	expectedErr := fmt.Errorf("boom")
 
@@ -225,7 +225,7 @@ func TestWithRetryDetectsWrappedAbort(t *testing.T) {
 	client, cleanup := CreateTestClient(t, uri)
 	defer cleanup()
 
-	policy := modusgraph.RetryPolicy{MaxRetries: 2, BaseDelay: time.Millisecond}
+	policy := dgdao.RetryPolicy{MaxRetries: 2, BaseDelay: time.Millisecond}
 	callCount := 0
 	err := client.WithRetry(context.Background(), policy, func() error {
 		callCount++

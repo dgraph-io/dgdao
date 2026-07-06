@@ -5,8 +5,6 @@ Please explain the changes you made here.
 **Checklist**
 
 - [ ] Code compiles correctly and linting passes locally
-- [ ] For all _code_ changes, an entry added to the `CHANGELOG.md` file describing and linking to
-      this PR
 - [ ] Tests added for new functionality, or regression tests for bug fixes added as applicable
 
 **Instructions**
@@ -21,4 +19,4 @@ Please explain the changes you made here.
 - Delete the `Instructions` line and everything below it, to indicate you have read and are
   following these instructions. 🙂
 
-Thank you for your contribution to modusGraph!
+Thank you for your contribution to dgdao!

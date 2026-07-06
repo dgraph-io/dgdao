@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph
+package dgdao
 
 import (
 	"context"
@@ -83,7 +83,7 @@ func (p RetryPolicy) delay(attempt int) time.Duration {
 //
 // Usage:
 //
-//	err := client.WithRetry(ctx, modusgraph.DefaultRetryPolicy, func() error {
+//	err := client.WithRetry(ctx, dgdao.DefaultRetryPolicy, func() error {
 //	    return client.Insert(ctx, &entity)
 //	})
 func (c client) WithRetry(ctx context.Context, policy RetryPolicy, fn func() error) error {

@@ -1,4 +1,4 @@
-module github.com/matthewmcneely/modusgraph
+module github.com/dgraph-io/dgdao
 
 go 1.26.4
 

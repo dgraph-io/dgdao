@@ -10,8 +10,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/matthewmcneely/modusgraph"
-	"github.com/matthewmcneely/modusgraph/typed"
+	"github.com/dgraph-io/dgdao"
+	"github.com/dgraph-io/dgdao/typed"
 )
 
 type jti struct {
@@ -20,9 +20,9 @@ type jti struct {
 	JTI   string   `json:"jti,omitempty" dgraph:"index=hash upsert unique"`
 }
 
-func newTypedConn(t *testing.T) modusgraph.Client {
+func newTypedConn(t *testing.T) dgdao.Client {
 	t.Helper()
-	conn, err := modusgraph.NewClient("file://"+t.TempDir(), modusgraph.WithAutoSchema(true))
+	conn, err := dgdao.NewClient("file://"+t.TempDir(), dgdao.WithAutoSchema(true))
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}

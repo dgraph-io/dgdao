@@ -11,10 +11,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dgraph-io/dgdao"
+	"github.com/dgraph-io/dgdao/typed"
 	dg "github.com/dolan-in/dgman/v2"
 	"github.com/go-logr/logr/funcr"
-	"github.com/matthewmcneely/modusgraph"
-	"github.com/matthewmcneely/modusgraph/typed"
 )
 
 // TestQuery_DetachedTerminalsReturnError verifies that executing a detached
@@ -42,18 +42,18 @@ func TestQuery_DetachedTerminalsReturnError(t *testing.T) {
 	}
 }
 
-// newCountingConn builds a file-backed modusgraph client exactly like newConn,
+// newCountingConn builds a file-backed dgdao client exactly like newConn,
 // but wires in a logr.Logger that counts dgman query executions. dgman logs
 // every executed query at verbosity 3 with the message "execute query"; the
 // returned *int is incremented once per such log line.
 //
-// dgman's logger is process-global, and modusgraph allows only one live
-// file-backed engine per process (see modusgraph.ErrSingletonOnly). Each call
+// dgman's logger is process-global, and dgdao allows only one live
+// file-backed engine per process (see dgdao.ErrSingletonOnly). Each call
 // uses a fresh t.TempDir() URI for data isolation. Tests that use
 // newCountingConn must NOT call t.Parallel(): a second live client would hit
 // the engine singleton, and parallel tests would also corrupt the shared
 // query count.
-func newCountingConn(t *testing.T, count *int) modusgraph.Client {
+func newCountingConn(t *testing.T, count *int) dgdao.Client {
 	t.Helper()
 	logger := funcr.New(func(_, args string) {
 		// funcr renders the message into args as `"msg"="execute query"`.
@@ -63,10 +63,10 @@ func newCountingConn(t *testing.T, count *int) modusgraph.Client {
 			*count++
 		}
 	}, funcr.Options{Verbosity: 3})
-	conn, err := modusgraph.NewClient("file://"+t.TempDir(),
-		modusgraph.WithAutoSchema(true), modusgraph.WithLogger(logger))
+	conn, err := dgdao.NewClient("file://"+t.TempDir(),
+		dgdao.WithAutoSchema(true), dgdao.WithLogger(logger))
 	if err != nil {
-		t.Fatalf("modusgraph.NewClient: %v", err)
+		t.Fatalf("dgdao.NewClient: %v", err)
 	}
 	t.Cleanup(conn.Close)
 	return conn
@@ -1105,7 +1105,7 @@ func TestRawQuery_CarriesEarlierBuilders(t *testing.T) {
 // first so the owner's edge links an already-persisted node. It returns an
 // owner client bound to conn.
 func seedOwners(
-	ctx context.Context, t *testing.T, conn modusgraph.Client, ownerToPet map[string]string,
+	ctx context.Context, t *testing.T, conn dgdao.Client, ownerToPet map[string]string,
 ) *typed.Client[owner] {
 	t.Helper()
 	pets := typed.NewClient[pet](conn)

@@ -1,11 +1,11 @@
-# Load Testing and Benchmarking for modusGraph
+# Load Testing and Benchmarking for dgdao
 
-This directory contains load tests and benchmarks for modusGraph.
+This directory contains load tests and benchmarks for dgdao.
 
 ## Long-Running Benchmark
 
 The `TestLongRunningBenchmark` provides a comprehensive stress test that performs periodic write,
-update, delete, and query operations on modusGraph while tracking performance metrics.
+update, delete, and query operations on dgdao while tracking performance metrics.
 
 ### Long-Running Benchmark Features
 
@@ -120,9 +120,9 @@ Queries:   198 ops | Avg: 2.234ms | Errors:   0 | Rate: 19.80 ops/s
 
 ## Unthrottled Benchmark
 
-The `TestModusGraphUnthrottledBenchmark` runs a maximum throughput stress test using concurrent
-workers that operate continuously without throttling. This test is designed to measure peak
-performance and identify bottlenecks under heavy load.
+The `TestDgdaoUnthrottledBenchmark` runs a maximum throughput stress test using concurrent workers
+that operate continuously without throttling. This test is designed to measure peak performance and
+identify bottlenecks under heavy load.
 
 ### Key Differences from Long-Running Benchmark
 
@@ -144,19 +144,19 @@ performance and identify bottlenecks under heavy load.
 #### Quick Test (30 seconds)
 
 ```bash
-BENCHMARK_DURATION=30s go test -v -run=TestModusGraphUnthrottledBenchmark ./load_test -timeout=2m
+BENCHMARK_DURATION=30s go test -v -run=TestDgdaoUnthrottledBenchmark ./load_test -timeout=2m
 ```
 
 #### Standard Test (3 minutes - default)
 
 ```bash
-go test -v -run=TestModusGraphUnthrottledBenchmark ./load_test -timeout=5m
+go test -v -run=TestDgdaoUnthrottledBenchmark ./load_test -timeout=5m
 ```
 
 #### Extended Test (10 minutes)
 
 ```bash
-BENCHMARK_DURATION=10m go test -v -run=TestModusGraphUnthrottledBenchmark ./load_test -timeout=15m
+BENCHMARK_DURATION=10m go test -v -run=TestDgdaoUnthrottledBenchmark ./load_test -timeout=15m
 ```
 
 #### Using InsertRaw Mode (High-Performance Inserts)
@@ -166,10 +166,10 @@ for write operations. This bypasses unique checks and uses direct mutation to th
 which can result in significantly higher insert throughput:
 
 ```bash
-RAW_INSERT=1 go test -v -run=TestModusGraphUnthrottledBenchmark ./load_test -timeout=5m
+RAW_INSERT=1 go test -v -run=TestDgdaoUnthrottledBenchmark ./load_test -timeout=5m
 ```
 
-**Note**: `InsertRaw` is only available for local (file-based) modusGraph instances. When enabled:
+**Note**: `InsertRaw` is only available for local (file-based) dgdao instances. When enabled:
 
 - Write operations use `client.InsertRaw()` instead of `client.Insert()`
 - UIDs are pre-assigned using Dgraph's blank node format (`_:entity-<id>`)
@@ -194,8 +194,8 @@ The benchmark can be configured by modifying `DefaultUnthrottledConfig()` in the
 The test uses optimized client settings:
 
 ```go
-modusgraph.WithCacheSizeMB(1024)  // 1GB posting cache
-modusgraph.WithPoolSize(20)       // 20 connections in pool
+dgdao.WithCacheSizeMB(1024)  // 1GB posting cache
+dgdao.WithPoolSize(20)       // 20 connections in pool
 ```
 
 ### Unthrottled Benchmark Operations
@@ -220,11 +220,11 @@ Queries:  8924 ops | Avg:  3.891ms | Errors:   0 | Rate: 892.40 ops/s
 ========================================
 ```
 
-**JSON Output** (saved to `modusgraph_unthrottled_results_YYYYMMDD_HHMMSS.json`):
+**JSON Output** (saved to `dgdao_unthrottled_results_YYYYMMDD_HHMMSS.json`):
 
 ```json
 {
-  "database": "modusgraph",
+  "database": "dgdao",
   "benchmark_type": "unthrottled",
   "duration_seconds": 60.0,
   "entities_in_db": 12847,

@@ -3,17 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
 	"testing"
 
-	mg "github.com/matthewmcneely/modusgraph"
+	mg "github.com/dgraph-io/dgdao"
 	"github.com/stretchr/testify/require"
 )
 
-// lockLikeNode mirrors modusGraph-migrate's migrationLock: its Dgraph type
+// lockLikeNode mirrors dgdao-migrate's migrationLock: its Dgraph type
 // name (declared via the DType tag, "DTypeMismatchType") differs from its Go
 // struct name ("lockLikeNode").
 type lockLikeNode struct {

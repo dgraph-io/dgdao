@@ -3,18 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
 	"fmt"
 
-	mg "github.com/matthewmcneely/modusgraph"
+	mg "github.com/dgraph-io/dgdao"
 )
 
 // Actor is a schema-defining record. Implementing mg.Schema (a single
 // SchemaTypeName method) marks it as a generated schema type; code generators
-// such as modusgraph-gen emit this method.
+// such as dgdao-gen emit this method.
 type Actor struct {
 	UID   string   `json:"uid,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`
@@ -24,7 +24,7 @@ type Actor struct {
 func (a *Actor) SchemaTypeName() string { return "Actor" }
 
 // ActorBuilder is a wrapper around Actor — the shape a generated fluent builder
-// or domain wrapper takes. Exposing Unwrap lets the modusgraph client route the
+// or domain wrapper takes. Exposing Unwrap lets the dgdao client route the
 // wrapper to its backing record, so the wrapper can be passed straight to
 // Insert/Update/Get without the caller reaching for the inner value.
 type ActorBuilder struct{ actor *Actor }

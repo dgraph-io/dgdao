@@ -8,7 +8,7 @@ package filter_test
 import (
 	"testing"
 
-	"github.com/matthewmcneely/modusgraph/typed/filter"
+	"github.com/dgraph-io/dgdao/typed/filter"
 )
 
 func TestParseUUID(t *testing.T) {

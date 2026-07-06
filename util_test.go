@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -16,18 +16,18 @@ import (
 	"testing"
 	"time"
 
+	mg "github.com/dgraph-io/dgdao"
 	"github.com/go-logr/stdr"
-	mg "github.com/matthewmcneely/modusgraph"
 	"github.com/stretchr/testify/require"
 )
 
-// CreateTestClient creates a new ModusGraph client for testing purposes with a configured logger.
+// CreateTestClient creates a new dgdao client for testing purposes with a configured logger.
 // It returns the client and a cleanup function that should be deferred by the caller.
 func CreateTestClient(t *testing.T, uri string) (mg.Client, func()) {
 
 	stdLogger := log.New(os.Stdout, "", log.LstdFlags)
 	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("mg")
-	verbosity := os.Getenv("MODUSGRAPH_TEST_LOG_LEVEL")
+	verbosity := os.Getenv("DGDAO_TEST_LOG_LEVEL")
 	if verbosity == "" {
 		stdr.SetVerbosity(0)
 	} else {
@@ -77,7 +77,7 @@ func GetTempDir(t *testing.T) string {
 		testName = strings.ReplaceAll(testName, "\\", "_")
 		testName = strings.ReplaceAll(testName, ":", "_")
 
-		tempDir := filepath.Join(baseDir, "modusgraph_test_"+testName)
+		tempDir := filepath.Join(baseDir, "dgdao_test_"+testName)
 
 		err := os.MkdirAll(tempDir, 0755)
 		if err != nil {
@@ -103,11 +103,11 @@ func GetTempDir(t *testing.T) string {
 // This is particularly useful when debugging tests in an IDE.
 func SetupTestEnv(logLevel int) {
 	// Only set these if they're not already set in the environment
-	if os.Getenv("MODUSGRAPH_TEST_ADDR") == "" {
-		os.Setenv("MODUSGRAPH_TEST_ADDR", "localhost:9080")
+	if os.Getenv("DGDAO_TEST_ADDR") == "" {
+		os.Setenv("DGDAO_TEST_ADDR", "localhost:9080")
 	}
-	if os.Getenv("MODUSGRAPH_TEST_LOG_LEVEL") == "" {
+	if os.Getenv("DGDAO_TEST_LOG_LEVEL") == "" {
 		// Uncomment to enable verbose logging during debugging
-		os.Setenv("MODUSGRAPH_TEST_LOG_LEVEL", strconv.Itoa(logLevel))
+		os.Setenv("DGDAO_TEST_LOG_LEVEL", strconv.Itoa(logLevel))
 	}
 }

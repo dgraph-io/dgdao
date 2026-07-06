@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/matthewmcneely/modusgraph"
+	"github.com/dgraph-io/dgdao"
 )
 
 // TestEntity is a test struct used for Insert tests
@@ -41,15 +41,15 @@ func TestClientInsert(t *testing.T) {
 		},
 		{
 			name: "InsertWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -82,7 +82,7 @@ func TestClientInsert(t *testing.T) {
 			err = client.Insert(ctx, &entity)
 			require.Error(t, err, "Insert should fail")
 			if strings.HasPrefix(tc.uri, "file://") {
-				var uniqueErr *modusgraph.UniqueError
+				var uniqueErr *dgdao.UniqueError
 				require.True(t, errors.As(err, &uniqueErr), "Error should be a UniqueError")
 				require.Equal(t, uid, uniqueErr.UID, "UID should match")
 			}
@@ -115,15 +115,15 @@ func TestEmbeddedInsert(t *testing.T) {
 		},
 		{
 			name: "InsertWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -170,15 +170,15 @@ func TestEmbeddedUniqueConstraintViolation(t *testing.T) {
 		},
 		{
 			name: "EmbeddedUniqueViolationWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -216,7 +216,7 @@ func TestEmbeddedUniqueConstraintViolation(t *testing.T) {
 			require.Error(t, err, "Second insert should fail due to unique constraint violation in embedded entity")
 
 			// Verify the error is a UniqueError
-			var uniqueErr *modusgraph.UniqueError
+			var uniqueErr *dgdao.UniqueError
 			require.True(t, errors.As(err, &uniqueErr), "Error should be a UniqueError")
 			// UID is only available for file URIs (embedded engine checks the database)
 			// Dgraph errors don't include the UID of the existing entity
@@ -248,15 +248,15 @@ func TestClientInsertMultipleEntities(t *testing.T) {
 		},
 		{
 			name: "InsertMultipleWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -311,8 +311,8 @@ func TestDepthQuery(t *testing.T) {
 		},
 		{
 			name: "InsertWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
@@ -351,7 +351,7 @@ func TestDepthQuery(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -416,15 +416,15 @@ func TestClientInsertRaw(t *testing.T) {
 		},
 		{
 			name: "InsertWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -471,8 +471,8 @@ func TestDepthQueryInsertRaw(t *testing.T) {
 		},
 		{
 			name: "InsertWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
@@ -518,7 +518,7 @@ func TestDepthQueryInsertRaw(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -553,15 +553,15 @@ func TestClientInsertRawMultipleEntities(t *testing.T) {
 		},
 		{
 			name: "InsertMultipleWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -609,15 +609,15 @@ func TestClientInsertMultipleEntitiesWithEmbeddedStructs(t *testing.T) {
 		},
 		{
 			name: "InsertMultipleEmbeddedWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -66,15 +66,15 @@ func TestReverseEdgeMutateFromTop(t *testing.T) {
 		},
 		{
 			name: "MutateFromTopWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -129,15 +129,15 @@ func TestReverseEdgeQueryFromTop(t *testing.T) {
 		},
 		{
 			name: "QueryFromTopWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -207,15 +207,15 @@ func TestReverseEdgeQueryFromMiddle(t *testing.T) {
 		},
 		{
 			name: "QueryFromMiddleWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -267,15 +267,15 @@ func TestReverseEdgeNavigateFromBottom(t *testing.T) {
 		},
 		{
 			name: "NavigateFromBottomWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -337,15 +337,15 @@ func TestReverseEdgeAddCourseToExistingDepartment(t *testing.T) {
 		},
 		{
 			name: "AddCourseWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -429,15 +429,15 @@ func TestReverseEdgeUpsert(t *testing.T) {
 		},
 		{
 			name: "UpsertWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -508,15 +508,15 @@ func TestReverseEdgeUpsertPreservesEdges(t *testing.T) {
 		},
 		{
 			name: "UpsertPreservesEdgesWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -588,15 +588,15 @@ func TestInsertMultipleEntitiesWithReverseEdges(t *testing.T) {
 		},
 		{
 			name: "InsertMultipleReverseWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -736,15 +736,15 @@ func TestFriendOfFriendBidirectional(t *testing.T) {
 		},
 		{
 			name: "BidirectionalWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -798,15 +798,15 @@ func TestFriendOfFriendChain(t *testing.T) {
 		},
 		{
 			name: "ChainWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -871,15 +871,15 @@ func TestFriendOfFriendMutualFriends(t *testing.T) {
 		},
 		{
 			name: "MutualFriendsWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -936,15 +936,15 @@ func TestFriendOfFriendChainEmbedded(t *testing.T) {
 		},
 		{
 			name: "ChainEmbeddedWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -1023,15 +1023,15 @@ func TestFriendOfFriendQueryByName(t *testing.T) {
 		},
 		{
 			name: "QueryByNameWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 

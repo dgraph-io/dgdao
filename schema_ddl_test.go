@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -29,15 +29,15 @@ func TestDropPredicateEmbedded(t *testing.T) {
 		},
 		{
 			name: "DropPredicateWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 

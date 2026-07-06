@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/matthewmcneely/modusgraph/typed"
+	"github.com/dgraph-io/dgdao/typed"
 )
 
 // TestMultiQueryAddValidatesBlockName checks that Add accepts legal DQL block

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/matthewmcneely/modusgraph/typed"
+	"github.com/dgraph-io/dgdao/typed"
 )
 
 func TestApply_RunsOptionsInOrder(t *testing.T) {

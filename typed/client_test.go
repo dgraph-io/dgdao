@@ -9,8 +9,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/matthewmcneely/modusgraph"
-	"github.com/matthewmcneely/modusgraph/typed"
+	"github.com/dgraph-io/dgdao"
+	"github.com/dgraph-io/dgdao/typed"
 )
 
 // widget is a minimal schema struct used to exercise the typed package.
@@ -38,12 +38,12 @@ type pet struct {
 	Name  string   `json:"name,omitempty" dgraph:"index=exact"`
 }
 
-// newConn builds a local file-backed modusgraph client for a test.
-func newConn(t *testing.T) modusgraph.Client {
+// newConn builds a local file-backed dgdao client for a test.
+func newConn(t *testing.T) dgdao.Client {
 	t.Helper()
-	conn, err := modusgraph.NewClient("file://"+t.TempDir(), modusgraph.WithAutoSchema(true))
+	conn, err := dgdao.NewClient("file://"+t.TempDir(), dgdao.WithAutoSchema(true))
 	if err != nil {
-		t.Fatalf("modusgraph.NewClient: %v", err)
+		t.Fatalf("dgdao.NewClient: %v", err)
 	}
 	t.Cleanup(conn.Close)
 	return conn

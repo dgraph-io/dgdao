@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -30,15 +30,15 @@ func TestClientSimpleGet(t *testing.T) {
 		},
 		{
 			name: "GetWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -90,8 +90,8 @@ func TestClientQuery(t *testing.T) {
 		},
 		{
 			name: "QueryWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
@@ -110,7 +110,7 @@ func TestClientQuery(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -273,8 +273,8 @@ func TestVectorSimilaritySearch(t *testing.T) {
 		/*
 			{
 				name: "VectorSimilaritySearchWithDgraphURI",
-				uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-				skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+				uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+				skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 			},
 		*/
 	}
@@ -282,7 +282,7 @@ func TestVectorSimilaritySearch(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -341,7 +341,7 @@ type Student struct {
 type Class struct {
 	Name string `json:"name,omitempty" dgraph:"index=exact"`
 
-	// The tilde prefix tells modusGraph not to manage this field in the schema,
+	// The tilde prefix tells dgdao not to manage this field in the schema,
 	// but we still need it in the struct in order for results to scan correctly
 	Students []*Student `json:"~takes_class,omitempty"`
 
@@ -361,15 +361,15 @@ func TestReverseEdgeQuery(t *testing.T) {
 		},
 		{
 			name: "ReverseEdgeQueryWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 

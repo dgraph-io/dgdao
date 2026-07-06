@@ -8,7 +8,7 @@ package filter_test
 import (
 	"fmt"
 
-	"github.com/matthewmcneely/modusgraph/typed/filter"
+	"github.com/dgraph-io/dgdao/typed/filter"
 )
 
 // ExampleBuilder composes a parameterised @filter expression. Terms within a

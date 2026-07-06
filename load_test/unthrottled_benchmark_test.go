@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgraph-io/dgdao"
 	"github.com/go-logr/stdr"
-	"github.com/matthewmcneely/modusgraph"
 	"github.com/stretchr/testify/require"
 )
 
@@ -67,8 +67,8 @@ func DefaultUnthrottledConfig() UnthrottledConfig {
 	}
 }
 
-// TestModusGraphUnthrottledBenchmark runs an unthrottled benchmark test
-func TestModusGraphUnthrottledBenchmark(t *testing.T) {
+// TestDgdaoUnthrottledBenchmark runs an unthrottled benchmark test
+func TestDgdaoUnthrottledBenchmark(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping unthrottled benchmark in short mode")
 	}
@@ -80,21 +80,21 @@ func TestModusGraphUnthrottledBenchmark(t *testing.T) {
 		}
 	}
 
-	runModusGraphUnthrottled(t, config)
+	runDgdaoUnthrottled(t, config)
 }
 
-func runModusGraphUnthrottled(t *testing.T, config UnthrottledConfig) {
+func runDgdaoUnthrottled(t *testing.T, config UnthrottledConfig) {
 	stdLogger := log.New(os.Stdout, "", log.LstdFlags)
 	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("unthrottled-benchmark")
 
 	tempDir := t.TempDir()
 	uri := "file://" + tempDir
-	client, err := modusgraph.NewClient(
+	client, err := dgdao.NewClient(
 		uri,
-		modusgraph.WithAutoSchema(false),
-		modusgraph.WithLogger(logger),
-		modusgraph.WithCacheSizeMB(2048),
-		modusgraph.WithPoolSize(50),
+		dgdao.WithAutoSchema(false),
+		dgdao.WithLogger(logger),
+		dgdao.WithCacheSizeMB(2048),
+		dgdao.WithPoolSize(50),
 	)
 	require.NoError(t, err)
 	defer client.Close()
@@ -120,7 +120,7 @@ func runModusGraphUnthrottled(t *testing.T, config UnthrottledConfig) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	t.Logf("Starting ModusGraph unthrottled benchmark for %s", config.Duration)
+	t.Logf("Starting dgdao unthrottled benchmark for %s", config.Duration)
 	t.Logf("Workers: Write=%d, Update=%d, Delete=%d, Query=%d",
 		config.NumWriteWorkers, config.NumUpdateWorkers, config.NumDeleteWorkers, config.NumQueryWorkers)
 
@@ -352,7 +352,7 @@ func runModusGraphUnthrottled(t *testing.T, config UnthrottledConfig) {
 			finalStats := stats.GetFinalStats()
 			if jsonData, err := json.MarshalIndent(finalStats, "", "  "); err == nil {
 				t.Logf("\nFinal Statistics (JSON):\n%s", string(jsonData))
-				saveUnthrottledStatsToFile(t, finalStats, "modusgraph")
+				saveUnthrottledStatsToFile(t, finalStats, "dgdao")
 			}
 			t.Fatal("Test interrupted by user")
 			return
@@ -367,7 +367,7 @@ func runModusGraphUnthrottled(t *testing.T, config UnthrottledConfig) {
 			finalStats := stats.GetFinalStats()
 			if jsonData, err := json.MarshalIndent(finalStats, "", "  "); err == nil {
 				t.Logf("\nFinal Statistics (JSON):\n%s", string(jsonData))
-				saveUnthrottledStatsToFile(t, finalStats, "modusgraph")
+				saveUnthrottledStatsToFile(t, finalStats, "dgdao")
 			}
 			return
 

@@ -14,10 +14,10 @@ import (
 	"time"
 
 	"github.com/cavaliergopher/grab/v3"
+	"github.com/dgraph-io/dgdao"
 	"github.com/dgraph-io/dgraph/v25/dgraphapi"
 	"github.com/dgraph-io/dgraph/v25/systest/1million/common"
 	"github.com/go-logr/stdr"
-	"github.com/matthewmcneely/modusgraph"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,7 +46,7 @@ const (
 
 func TestLiveLoaderSmall(t *testing.T) {
 
-	engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(t.TempDir()))
+	engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(t.TempDir()))
 	require.NoError(t, err)
 	defer engine.Close()
 
@@ -92,8 +92,8 @@ func TestLiveLoader1Million(t *testing.T) {
 	}
 	stdLogger := log.New(os.Stdout, "", log.LstdFlags)
 	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("mg")
-	conf := modusgraph.NewDefaultConfig(t.TempDir()).WithLogger(logger).WithCacheSizeMB(0)
-	engine, err := modusgraph.NewEngine(conf)
+	conf := dgdao.NewDefaultConfig(t.TempDir()).WithLogger(logger).WithCacheSizeMB(0)
+	engine, err := dgdao.NewEngine(conf)
 	require.NoError(t, err)
 	defer engine.Close()
 
