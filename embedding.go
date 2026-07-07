@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph
+package dgdao
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ import (
 )
 
 // SimString is a string type that participates in automatic vector similarity search.
-// When a struct field of this type is tagged with `dgraph:"embedding"`, modusGraph
+// When a struct field of this type is tagged with `dgraph:"embedding"`, dgdao
 // will automatically generate and maintain a shadow float32vector predicate
 // (<fieldname>__vec) backed by the configured EmbeddingProvider.
 //
@@ -480,7 +480,7 @@ func SimilarTo(tx *dg.TxnContext, model any, field string, vec []float32, k int)
 func SimilarToText(c Client, ctx context.Context, model any, field string, text string, k int) error {
 	ec, ok := c.(embeddingClient)
 	if !ok {
-		return fmt.Errorf("client does not expose embeddingProvider; ensure it is a modusgraph client")
+		return fmt.Errorf("client does not expose embeddingProvider; ensure it is a dgdao client")
 	}
 	provider := ec.embeddingProvider()
 	if provider == nil {

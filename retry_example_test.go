@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
 	"time"
 
-	"github.com/matthewmcneely/modusgraph"
+	"github.com/dgraph-io/dgdao"
 )
 
 // ExampleClient_WithRetry wraps a mutation so an aborted transaction — the
@@ -18,13 +18,13 @@ import (
 // caller. Non-abort errors return immediately; the context bounds the total
 // wait.
 func ExampleClient_WithRetry() {
-	client, _ := modusgraph.NewClient("dgraph://localhost:9080")
+	client, _ := dgdao.NewClient("dgraph://localhost:9080")
 	defer client.Close()
 
 	ctx := context.Background()
 	entity := &RetryEntity{Name: "alice", Value: 1}
 
-	err := client.WithRetry(ctx, modusgraph.DefaultRetryPolicy, func() error {
+	err := client.WithRetry(ctx, dgdao.DefaultRetryPolicy, func() error {
 		return client.Insert(ctx, entity)
 	})
 	if err != nil {
@@ -36,10 +36,10 @@ func ExampleClient_WithRetry() {
 // delay doubling each attempt, capped at 2s, with 20% jitter to spread
 // concurrent retriers apart.
 func ExampleRetryPolicy() {
-	client, _ := modusgraph.NewClient("dgraph://localhost:9080")
+	client, _ := dgdao.NewClient("dgraph://localhost:9080")
 	defer client.Close()
 
-	policy := modusgraph.RetryPolicy{
+	policy := dgdao.RetryPolicy{
 		MaxRetries: 3,
 		BaseDelay:  50 * time.Millisecond,
 		MaxDelay:   2 * time.Second,

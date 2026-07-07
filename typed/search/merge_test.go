@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/matthewmcneely/modusgraph/typed/search"
+	"github.com/dgraph-io/dgdao/typed/search"
 )
 
 type rec struct {

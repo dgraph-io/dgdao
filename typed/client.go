@@ -9,18 +9,18 @@ import (
 	"context"
 	"iter"
 
-	"github.com/matthewmcneely/modusgraph"
+	"github.com/dgraph-io/dgdao"
 )
 
 // Client provides type-safe CRUD and query operations over records of type T.
-// T is the schema struct (for example schema.Actor); modusgraph reflects over
+// T is the schema struct (for example schema.Actor); dgdao reflects over
 // the struct's dgraph/json tags, so T needs no constraint.
 type Client[T any] struct {
-	conn modusgraph.Client
+	conn dgdao.Client
 }
 
 // NewClient binds a Client[T] to conn.
-func NewClient[T any](conn modusgraph.Client) *Client[T] {
+func NewClient[T any](conn dgdao.Client) *Client[T] {
 	return &Client[T]{conn: conn}
 }
 
@@ -35,7 +35,7 @@ func (c *Client[T]) Get(ctx context.Context, uid string) (rec *T, err error) {
 	return &out, nil
 }
 
-// Add inserts a new T. modusgraph writes the assigned UID back into rec.
+// Add inserts a new T. dgdao writes the assigned UID back into rec.
 func (c *Client[T]) Add(ctx context.Context, rec *T) (err error) {
 	ctx, span := currentTracer().StartSpan(ctx, "add", entityName[T]())
 	defer func() { span.End(err) }()

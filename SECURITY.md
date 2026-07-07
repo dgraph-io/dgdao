@@ -1,7 +1,7 @@
 # Reporting Security Concerns
 
-We take the security of Modus very seriously. If you believe you have found a security vulnerability
-in Modus, we encourage you to let us know right away.
+We take the security of dgdao very seriously. If you believe you have found a security vulnerability
+in dgdao, we encourage you to let us know right away.
 
 We will investigate all legitimate reports and do our best to quickly fix the problem. Please report
 any issues or vulnerabilities via Github Security Advisories instead of posting a public issue in

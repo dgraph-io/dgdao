@@ -1,8 +1,8 @@
-# modusGraph Basic CLI Example
+# dgdao Basic CLI Example
 
-This command-line application demonstrates basic operations with modusGraph, a graph database
-library. The example implements CRUD operations (Create, Read, Update, Delete) for a simple `Thread`
-entity type.
+This command-line application demonstrates basic operations with dgdao, a graph database library.
+The example implements CRUD operations (Create, Read, Update, Delete) for a simple `Thread` entity
+type.
 
 ## Requirements
 
@@ -21,16 +21,16 @@ cd examples/basic
 go run main.go [options]
 
 # Or build and then run
-go build -o modusgraph-cli
-./modusgraph-cli [options]
+go build -o dgdao-cli
+./dgdao-cli [options]
 ```
 
 ## Usage
 
 ```sh
 Usage of ./main:
-  --dir string       Directory where modusGraph will initialize, note the directory must exist and you must have write access
-  --addr string      Hostname/port where modusGraph will access for I/O (if not using the dir flag)
+  --dir string       Directory where dgdao will initialize, note the directory must exist and you must have write access
+  --addr string      Hostname/port where dgdao will access for I/O (if not using the dir flag)
   --cmd string       Command to execute: create, update, delete, get, list (default "create")
   --author string    Created by (for create and update)
   --name string      Name of the Thread (for create and update)
@@ -46,7 +46,7 @@ parameter.
 ### Create a Thread
 
 ```bash
-go run main.go --dir /tmp/modusgraph-data --cmd create --name "New Thread" --workspace "workspace-123" --author "user-456"
+go run main.go --dir /tmp/dgdao-data --cmd create --name "New Thread" --workspace "workspace-123" --author "user-456"
 ```
 
 **Note**: Due to the intricacies of how Dgraph handles unique fields and upserts in its core
@@ -59,31 +59,31 @@ ID before creating a new Thread.
 ### Update a Thread
 
 ```bash
-go run main.go --dir /tmp/modusgraph-data --cmd update --uid "0x123" --name "Updated Thread" --workspace "workspace-123" --author "user-456"
+go run main.go --dir /tmp/dgdao-data --cmd update --uid "0x123" --name "Updated Thread" --workspace "workspace-123" --author "user-456"
 ```
 
 ### Get a Thread by UID
 
 ```bash
-go run main.go --dir /tmp/modusgraph-data --cmd get --uid "0x123"
+go run main.go --dir /tmp/dgdao-data --cmd get --uid "0x123"
 ```
 
 ### Delete a Thread
 
 ```bash
-go run main.go --dir /tmp/modusgraph-data --cmd delete --uid "0x123"
+go run main.go --dir /tmp/dgdao-data --cmd delete --uid "0x123"
 ```
 
 ### List All Threads
 
 ```bash
-go run main.go --dir /tmp/modusgraph-data --cmd list
+go run main.go --dir /tmp/dgdao-data --cmd list
 ```
 
 ### List Threads by Workspace
 
 ```bash
-go run main.go --dir /tmp/modusgraph-data --cmd list --workspace "workspace-123"
+go run main.go --dir /tmp/dgdao-data --cmd list --workspace "workspace-123"
 ```
 
 ## Using with Dgraph

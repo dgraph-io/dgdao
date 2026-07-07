@@ -12,8 +12,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/dgraph-io/dgdao"
 	dg "github.com/dolan-in/dgman/v2"
-	"github.com/matthewmcneely/modusgraph"
 )
 
 // MultiQuery batches N homogeneous-type Query[T] blocks into a single
@@ -23,13 +23,13 @@ import (
 // Dgraph executes the blocks concurrently on the server side; the entire
 // batch costs one gRPC round-trip.
 type MultiQuery[T any] struct {
-	conn   modusgraph.Client
+	conn   dgdao.Client
 	names  []string
 	blocks map[string]*Query[T]
 }
 
 // NewMultiQuery constructs a MultiQuery bound to conn.
-func NewMultiQuery[T any](conn modusgraph.Client) *MultiQuery[T] {
+func NewMultiQuery[T any](conn dgdao.Client) *MultiQuery[T] {
 	return &MultiQuery[T]{
 		conn:   conn,
 		blocks: make(map[string]*Query[T]),

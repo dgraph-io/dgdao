@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph
+package dgdao
 
 import (
 	"context"
@@ -25,7 +25,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Client provides an interface for ModusGraph operations
+// Client provides an interface for dgdao operations
 type Client interface {
 	// Insert adds a new object or slice of objects to the database.
 	// The object must be a pointer to a struct with appropriate dgraph tags.

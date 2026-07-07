@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// NOTE: These tests exercise the predicate= tag through modusgraph's client API.
+// NOTE: These tests exercise the predicate= tag through dgdao's client API.
 // They depend on the dgman fork (mlwelles/dgman) containing the predicate= fixes
 // for both the write path (filterStruct using schema.Predicate as map key) and
 // the read path (remapping JSON keys from predicate names to json tag names).
@@ -35,7 +35,7 @@ type PredicateFilm struct {
 }
 
 // PredicateBook and PredicateAuthor test forward and reverse edges using the
-// predicate= tag. This mirrors the pattern used by modusGraphGen where:
+// predicate= tag. This mirrors the pattern used by dgdaoGen where:
 //   - PredicateBook has a forward edge: predicate=written_by reverse
 //   - PredicateAuthor has a reverse edge: predicate=~written_by reverse
 //
@@ -72,15 +72,15 @@ func TestPredicateInsertAndGet(t *testing.T) {
 		},
 		{
 			name: "PredicateInsertGetWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -131,15 +131,15 @@ func TestPredicateUpdate(t *testing.T) {
 		},
 		{
 			name: "PredicateUpdateWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -187,15 +187,15 @@ func TestPredicateUpsert(t *testing.T) {
 		},
 		{
 			name: "PredicateUpsertWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -253,15 +253,15 @@ func TestPredicateQuery(t *testing.T) {
 		},
 		{
 			name: "PredicateQueryWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -322,7 +322,7 @@ func TestPredicateQuery(t *testing.T) {
 
 // TestPredicateReverseEdge tests that forward edges with predicate=<name>
 // and reverse edges with predicate=~<name> work correctly together.
-// This mirrors the pattern used by modusGraphGen (e.g. Film.genre / Genre.~genre).
+// This mirrors the pattern used by dgdaoGen (e.g. Film.genre / Genre.~genre).
 func TestPredicateReverseEdge(t *testing.T) {
 	testCases := []struct {
 		name string
@@ -335,15 +335,15 @@ func TestPredicateReverseEdge(t *testing.T) {
 		},
 		{
 			name: "PredicateReverseWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 
@@ -430,15 +430,15 @@ func TestPredicateReverseEdgeQuery(t *testing.T) {
 		},
 		{
 			name: "PredicateReverseQueryWithDgraphURI",
-			uri:  "dgraph://" + os.Getenv("MODUSGRAPH_TEST_ADDR"),
-			skip: os.Getenv("MODUSGRAPH_TEST_ADDR") == "",
+			uri:  "dgraph://" + os.Getenv("DGDAO_TEST_ADDR"),
+			skip: os.Getenv("DGDAO_TEST_ADDR") == "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
-				t.Skipf("Skipping %s: MODUSGRAPH_TEST_ADDR not set", tc.name)
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
 				return
 			}
 

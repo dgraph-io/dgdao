@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/cavaliergopher/grab/v3"
+	"github.com/dgraph-io/dgdao"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/stdr"
-	"github.com/matthewmcneely/modusgraph"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 
 func main() {
 	// Parse command line arguments
-	dirFlag := flag.String("dir", "", "Directory where modusGraph will initialize and store the 1million dataset")
+	dirFlag := flag.String("dir", "", "Directory where dgdao will initialize and store the 1million dataset")
 	verbosityFlag := flag.Int("verbosity", 1, "Verbosity level (0-2)")
 
 	// Parse command line arguments
@@ -58,17 +58,17 @@ func main() {
 	logger.Info("Starting 1million dataset loader")
 	start := time.Now()
 
-	// Initialize modusGraph engine
-	logger.Info("Initializing modusGraph engine", "directory", dirPath)
-	conf := modusgraph.NewDefaultConfig(dirPath).WithLogger(logger)
-	engine, err := modusgraph.NewEngine(conf)
+	// Initialize dgdao engine
+	logger.Info("Initializing dgdao engine", "directory", dirPath)
+	conf := dgdao.NewDefaultConfig(dirPath).WithLogger(logger)
+	engine, err := dgdao.NewEngine(conf)
 	if err != nil {
-		logger.Error(err, "Failed to initialize modusGraph engine")
+		logger.Error(err, "Failed to initialize dgdao engine")
 		os.Exit(1)
 	}
 	defer engine.Close()
 
-	logger.Info("modusGraph engine initialized successfully")
+	logger.Info("dgdao engine initialized successfully")
 
 	// Download the schema and data files
 	logger.Info("Downloading 1million schema and data files")
@@ -99,7 +99,7 @@ func main() {
 	}
 
 	// Load the schema and data
-	logger.Info("Loading 1million dataset into modusGraph")
+	logger.Info("Loading 1million dataset into dgdao")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 

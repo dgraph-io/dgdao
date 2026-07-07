@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dgraph-io/dgdao"
 	dg "github.com/dolan-in/dgman/v2"
-	"github.com/matthewmcneely/modusgraph"
 )
 
 // TestRemapPredicateKeys_SurfacesMalformedBlock guards the swallowed-error fix:
@@ -50,7 +50,7 @@ type ivOwner struct {
 // is what keeps WhereEdge bounded regardless of how many roots match — the
 // concern that motivated replacing the eager client-side pre-pass.
 func TestEdgeBlocksRenderServerSideVar(t *testing.T) {
-	conn, err := modusgraph.NewClient("file://"+t.TempDir(), modusgraph.WithAutoSchema(true))
+	conn, err := dgdao.NewClient("file://"+t.TempDir(), dgdao.WithAutoSchema(true))
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}

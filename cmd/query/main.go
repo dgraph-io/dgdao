@@ -19,13 +19,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dgraph-io/dgdao"
 	"github.com/go-logr/stdr"
-	"github.com/matthewmcneely/modusgraph"
 )
 
 func main() {
 	// Define flags
-	dirFlag := flag.String("dir", "", "Directory where the modusGraph database is stored")
+	dirFlag := flag.String("dir", "", "Directory where the dgdao database is stored")
 	prettyFlag := flag.Bool("pretty", true, "Pretty-print the JSON output")
 	timeoutFlag := flag.Duration("timeout", 30*time.Second, "Query timeout duration")
 	flag.Parse()
@@ -55,12 +55,12 @@ func main() {
 		log.Fatalf("Error: Directory %s does not exist", dirPath)
 	}
 
-	// Initialize modusGraph client with the directory where data is stored
-	logger.V(1).Info("Initializing modusGraph client", "directory", dirPath)
-	client, err := modusgraph.NewClient(fmt.Sprintf("file://%s", dirPath),
-		modusgraph.WithLogger(logger))
+	// Initialize dgdao client with the directory where data is stored
+	logger.V(1).Info("Initializing dgdao client", "directory", dirPath)
+	client, err := dgdao.NewClient(fmt.Sprintf("file://%s", dirPath),
+		dgdao.WithLogger(logger))
 	if err != nil {
-		logger.Error(err, "Failed to initialize modusGraph client")
+		logger.Error(err, "Failed to initialize dgdao client")
 		os.Exit(1)
 	}
 	defer client.Close()

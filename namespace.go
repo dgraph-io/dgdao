@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph
+package dgdao
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/dgraph-io/dgo/v250/protos/api"
 )
 
-// Namespace is one of the namespaces in modusDB.
+// Namespace is one of the namespaces in dgdao.
 type Namespace struct {
 	id     uint64
 	engine *Engine
@@ -21,12 +21,12 @@ func (ns *Namespace) ID() uint64 {
 	return ns.id
 }
 
-// DropAll drops all the data and schema in the modusDB instance.
+// DropAll drops all the data and schema in the dgdao instance.
 func (ns *Namespace) DropAll(ctx context.Context) error {
 	return ns.engine.DropAll(ctx)
 }
 
-// DropData drops all the data in the modusDB instance.
+// DropData drops all the data in the dgdao instance.
 func (ns *Namespace) DropData(ctx context.Context) error {
 	return ns.engine.dropData(ctx, ns)
 }
@@ -39,12 +39,12 @@ func (ns *Namespace) Mutate(ctx context.Context, ms []*api.Mutation) (map[string
 	return ns.engine.mutate(ctx, ns, ms)
 }
 
-// Query performs query or mutation or upsert on the given modusDB instance.
+// Query performs query or mutation or upsert on the given dgdao instance.
 func (ns *Namespace) Query(ctx context.Context, query string) (*api.Response, error) {
 	return ns.engine.query(ctx, ns, query, nil)
 }
 
-// QueryWithVars performs query or mutation or upsert on the given modusDB instance.
+// QueryWithVars performs query or mutation or upsert on the given dgdao instance.
 func (ns *Namespace) QueryWithVars(ctx context.Context, query string, vars map[string]string) (*api.Response, error) {
 	return ns.engine.query(ctx, ns, query, vars)
 }

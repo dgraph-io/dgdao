@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgraph-io/dgdao"
 	"github.com/go-logr/stdr"
-	"github.com/matthewmcneely/modusgraph"
 	"github.com/stretchr/testify/require"
 )
 
@@ -344,11 +344,11 @@ func runLongRunningBenchmark(t *testing.T, config BenchmarkConfig) {
 	// Create client using file-based URI
 	tempDir := t.TempDir()
 	uri := "file://" + tempDir
-	client, err := modusgraph.NewClient(
+	client, err := dgdao.NewClient(
 		uri,
-		modusgraph.WithAutoSchema(false),
-		modusgraph.WithLogger(logger),
-		modusgraph.WithCacheSizeMB(128),
+		dgdao.WithAutoSchema(false),
+		dgdao.WithLogger(logger),
+		dgdao.WithCacheSizeMB(128),
 	)
 	require.NoError(t, err)
 	defer client.Close()

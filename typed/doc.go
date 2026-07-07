@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Package typed binds a Go type to the otherwise any-typed modusgraph.Client,
+// Package typed binds a Go type to the otherwise any-typed dgdao.Client,
 // giving you generic, type-safe CRUD and a fluent query builder with no
 // per-entity code generation. It is the handwritten substrate that
-// modusgraph-gen's generated clients compose over, and it is useful on its own
-// wherever you want compile-time types over modusgraph.
+// dgdao-gen's generated clients compose over, and it is useful on its own
+// wherever you want compile-time types over dgdao.
 //
 // # Why
 //
-// modusgraph.Client is value-oriented: its methods take and return any, and a
+// dgdao.Client is value-oriented: its methods take and return any, and a
 // query is assembled by hand from dgman primitives and decoded into a slice you
 // declare at the call site. That works, but every call site repeats the same
 // shape — declare the destination, build the query, decode, check the type.

@@ -83,7 +83,7 @@ a caller's `UID`/`RootFunc` narrowing so the var block can root at it:
 ```go
 type Query[T any] struct {
     q              *dg.Query
-    conn           modusgraph.Client
+    conn           dgdao.Client
     ctx            context.Context
     limit          int
     offset         int

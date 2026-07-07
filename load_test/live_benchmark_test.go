@@ -13,7 +13,7 @@ import (
 	"runtime/pprof"
 	"testing"
 
-	"github.com/matthewmcneely/modusgraph"
+	"github.com/dgraph-io/dgdao"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,7 +45,7 @@ func BenchmarkDatabaseOperations(b *testing.B) {
 		runtime.ReadMemStats(&ms)
 		initialAlloc := ms.Alloc
 
-		engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(b.TempDir()))
+		engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(b.TempDir()))
 		require.NoError(b, err)
 		defer engine.Close()
 
@@ -71,7 +71,7 @@ func BenchmarkDatabaseOperations(b *testing.B) {
 		initialAlloc := ms.Alloc
 
 		// Setup database with data once
-		engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(b.TempDir()))
+		engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(b.TempDir()))
 		require.NoError(b, err)
 		defer engine.Close()
 

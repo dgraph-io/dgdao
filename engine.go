@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph
+package dgdao
 
 import (
 	"context"
@@ -34,20 +34,20 @@ import (
 )
 
 var (
-	// This ensures that we only have one instance of modusDB in this process.
+	// This ensures that we only have one instance of dgdao in this process.
 	singleton atomic.Bool
 	// activeEngine tracks the current Engine instance for global access
 	activeEngine *Engine
 
-	ErrSingletonOnly    = errors.New("only one instance of modusGraph can exist in a process")
+	ErrSingletonOnly    = errors.New("only one instance of dgdao can exist in a process")
 	ErrEmptyDataDir     = errors.New("data directory is required")
-	ErrClosedEngine     = errors.New("modusGraph engine is closed")
+	ErrClosedEngine     = errors.New("dgdao engine is closed")
 	ErrNonExistentDB    = errors.New("namespace does not exist")
 	ErrInvalidCacheSize = errors.New("cache size must be zero or positive")
 )
 
-// Engine is an instance of modusGraph.
-// For now, we only support one instance of modusGraph per process.
+// Engine is an instance of dgdao.
+// For now, we only support one instance of dgdao per process.
 type Engine struct {
 	mutex  sync.RWMutex
 	isOpen atomic.Bool
@@ -60,15 +60,15 @@ type Engine struct {
 	logger logr.Logger
 }
 
-// NewEngine returns a new modusGraph instance.
+// NewEngine returns a new dgdao instance.
 func NewEngine(conf Config) (*Engine, error) {
-	// Ensure that we do not create another instance of modusGraph in the same process
+	// Ensure that we do not create another instance of dgdao in the same process
 	if !singleton.CompareAndSwap(false, true) {
 		conf.logger.Error(ErrSingletonOnly, "Failed to create engine")
 		return nil, ErrSingletonOnly
 	}
 
-	conf.logger.V(1).Info("Creating new modusGraph engine", "dataDir", conf.dataDir)
+	conf.logger.V(1).Info("Creating new dgdao engine", "dataDir", conf.dataDir)
 
 	if err := conf.validate(); err != nil {
 		conf.logger.Error(err, "Invalid configuration")
@@ -224,7 +224,7 @@ func (engine *Engine) GetDefaultNamespace() *Namespace {
 	return engine.db0
 }
 
-// DropAll drops all the data and schema in the modusDB instance.
+// DropAll drops all the data and schema in the dg engine instance.
 func (engine *Engine) DropAll(ctx context.Context) error {
 	engine.mutex.Lock()
 	defer engine.mutex.Unlock()
@@ -593,7 +593,7 @@ func (engine *Engine) LoadData(inCtx context.Context, dataDir string) error {
 	return engine.db0.LoadData(inCtx, dataDir)
 }
 
-// Close closes the modusGraph instance.
+// Close closes the dgdao instance.
 func (engine *Engine) Close() {
 	engine.mutex.Lock()
 	defer engine.mutex.Unlock()
@@ -603,7 +603,7 @@ func (engine *Engine) Close() {
 	}
 
 	if !singleton.CompareAndSwap(true, false) {
-		panic("modusGraph instance was not properly opened")
+		panic("dgdao instance was not properly opened")
 	}
 
 	engine.isOpen.Store(false)

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
+	mg "github.com/dgraph-io/dgdao"
 	dg "github.com/dolan-in/dgman/v2"
-	mg "github.com/matthewmcneely/modusgraph"
 	"github.com/stretchr/testify/require"
 )
 

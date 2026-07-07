@@ -3,19 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
 	"testing"
 
+	"github.com/dgraph-io/dgdao"
 	"github.com/dgraph-io/dgo/v250/protos/api"
-	"github.com/matthewmcneely/modusgraph"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNonGalaxyDB(t *testing.T) {
-	engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(t.TempDir()))
+	engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(t.TempDir()))
 	require.NoError(t, err)
 	defer engine.Close()
 
@@ -50,7 +50,7 @@ func TestNonGalaxyDB(t *testing.T) {
 }
 
 func TestDropDataNamespace(t *testing.T) {
-	engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(t.TempDir()))
+	engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(t.TempDir()))
 	require.NoError(t, err)
 	defer engine.Close()
 
@@ -90,7 +90,7 @@ func TestDropDataNamespace(t *testing.T) {
 }
 
 func TestMultipleDBs(t *testing.T) {
-	engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(t.TempDir()))
+	engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(t.TempDir()))
 	require.NoError(t, err)
 	defer engine.Close()
 
@@ -149,7 +149,7 @@ func TestMultipleDBs(t *testing.T) {
 }
 
 func TestQueryWrongDB(t *testing.T) {
-	engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(t.TempDir()))
+	engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(t.TempDir()))
 	require.NoError(t, err)
 	defer engine.Close()
 
@@ -188,7 +188,7 @@ func TestQueryWrongDB(t *testing.T) {
 }
 
 func TestTwoDBs(t *testing.T) {
-	engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(t.TempDir()))
+	engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(t.TempDir()))
 	require.NoError(t, err)
 	defer engine.Close()
 
@@ -247,7 +247,7 @@ func TestTwoDBs(t *testing.T) {
 }
 
 func TestCommitOrAbortNamespaceIsolation(t *testing.T) {
-	engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(t.TempDir()))
+	engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(t.TempDir()))
 	require.NoError(t, err)
 	defer engine.Close()
 
@@ -319,7 +319,7 @@ func TestCommitOrAbortNamespaceIsolation(t *testing.T) {
 
 func TestDBDBRestart(t *testing.T) {
 	dataDir := t.TempDir()
-	engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(dataDir))
+	engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(dataDir))
 	require.NoError(t, err)
 	defer func() { engine.Close() }()
 
@@ -342,7 +342,7 @@ func TestDBDBRestart(t *testing.T) {
 	require.NoError(t, err)
 
 	engine.Close()
-	engine, err = modusgraph.NewEngine(modusgraph.NewDefaultConfig(dataDir))
+	engine, err = dgdao.NewEngine(dgdao.NewDefaultConfig(dataDir))
 	require.NoError(t, err)
 
 	db2, err := engine.CreateNamespace()

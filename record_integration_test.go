@@ -3,18 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
 	"testing"
 
-	mg "github.com/matthewmcneely/modusgraph"
+	mg "github.com/dgraph-io/dgdao"
 	"github.com/stretchr/testify/require"
 )
 
 // studioRecord is a schema-defining record (implements mg.Schema). studioWrapper
-// wraps it and exposes Unwrap, exactly as a modusgraph-gen wrapper would.
+// wraps it and exposes Unwrap, exactly as a dgdao-gen wrapper would.
 type studioRecord struct {
 	UID   string   `json:"uid,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`

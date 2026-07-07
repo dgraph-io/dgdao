@@ -1,21 +1,21 @@
 <div align="center">
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/matthewmcneely/modusgraph)](https://github.com/matthewmcneely/modusgraph/stargazers)
-[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/matthewmcneely/modusgraph)](https://github.com/matthewmcneely/modusgraph/commits/main/)
+[![GitHub Repo stars](https://img.shields.io/github/stars/dgraph-io/dgdao)](https://github.com/dgraph-io/dgdao/stargazers)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/m/dgraph-io/dgdao)](https://github.com/dgraph-io/dgdao/commits/main/)
 
 </div>
 
-**modusGraph is a high-performance, transactional database system.** It's designed to be type-first,
-schema-agnostic, and portable. modusGraph provides ORM-like mechanisms that make it simple to build
-new apps, paired with support for advanced use cases through the Dgraph Query Language (DQL). A
-dynamic schema allows for natural relations to be expressed in your data with performance that
-scales with your use case.
+**dgdao is a high-performance, transactional database system.** It's designed to be type-first,
+schema-agnostic, and portable. dgdao provides ORM-like mechanisms that make it simple to build new
+apps, paired with support for advanced use cases through the Dgraph Query Language (DQL). A dynamic
+schema allows for natural relations to be expressed in your data with performance that scales with
+your use case.
 
-modusGraph is available as a Go package for running in-process, providing low-latency reads, writes,
-and vector searches. We’ve made trade-offs to prioritize speed and simplicity. When runnning
-in-process, modusGraph internalizes Dgraph's server components, and data is written to a local
-file-based database. modusGraph also supports remote Dgraph servers, allowing you deploy your apps
-to any Dgraph cluster simply by changing the connection string.
+dgdao is available as a Go package for running in-process, providing low-latency reads, writes, and
+vector searches. We’ve made trade-offs to prioritize speed and simplicity. When runnning in-process,
+dgdao internalizes Dgraph's server components, and data is written to a local file-based database.
+dgdao also supports remote Dgraph servers, allowing you deploy your apps to any Dgraph cluster
+simply by changing the connection string.
 
 ## Quickstart
 
@@ -27,7 +27,7 @@ import (
     "fmt"
     "time"
 
-    mg "github.com/matthewmcneely/modusgraph"
+    mg "github.com/dgraph-io/dgdao"
 )
 
 type TestEntity struct {
@@ -42,8 +42,8 @@ type TestEntity struct {
 }
 
 func main() {
-    // Use a file URI to connect to a in-process modusGraph instance, ensure that the directory exists
-    uri := "file:///tmp/modusgraph"
+    // Use a file URI to connect to a in-process dgdao instance, ensure that the directory exists
+    uri := "file:///tmp/dgdao"
     // Assigning a Dgraph URI will connect to a remote Dgraph server
     // uri := "dgraph://localhost:9080"
 
@@ -91,7 +91,7 @@ defer client.Close()
 
 ### URI Options
 
-modusGraph supports two URI schemes for managing graph databases:
+dgdao supports two URI schemes for managing graph databases:
 
 #### `file://` - Local File-Based Database
 
@@ -121,12 +121,12 @@ You can have multiple remote clients per process provided the URIs are distinct.
 
 ### Configuration Options
 
-modusGraph provides several configuration options that can be passed to the `NewClient` function:
+dgdao provides several configuration options that can be passed to the `NewClient` function:
 
 #### WithAutoSchema(bool)
 
-Enables or disables automatic schema management. When enabled, modusGraph will automatically create
-and update the graph database schema based on the struct tags of objects you insert.
+Enables or disables automatic schema management. When enabled, dgdao will automatically create and
+update the graph database schema based on the struct tags of objects you insert.
 
 ```go
 // Enable automatic schema management
@@ -242,8 +242,8 @@ client, err := mg.NewClient(uri,
 
 ## Defining Your Graph with Structs
 
-modusGraph uses Go structs to define your graph database schema. By adding `json` and `dgraph` tags
-to your struct fields, you tell modusGraph how to store and index your data in the graph database.
+dgdao uses Go structs to define your graph database schema. By adding `json` and `dgraph` tags to
+your struct fields, you tell dgdao how to store and index your data in the graph database.
 
 ### Basic Structure
 
@@ -265,36 +265,36 @@ type MyNode struct {
 
 ### `dgraph` Field Tags
 
-modusGraph uses struct tags to define how each field should be handled in the graph database:
+dgdao uses struct tags to define how each field should be handled in the graph database:
 
-| Directive     | Option     | Description                                                                                                                                                                                                                                 | Example                                                                                |
-| ------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| **index**     | exact      | Creates an exact-match index for string fields                                                                                                                                                                                              | Name string &#96;json:"name" dgraph:"index=exact"&#96;                                 |
-|               | hash       | Creates a hash index (same as exact)                                                                                                                                                                                                        | Code string &#96;json:"code" dgraph:"index=hash"&#96;                                  |
-|               | term       | Creates a term index for text search                                                                                                                                                                                                        | Description string &#96;json:"description" dgraph:"index=term"&#96;                    |
-|               | fulltext   | Creates a full-text search index                                                                                                                                                                                                            | Content string &#96;json:"content" dgraph:"index=fulltext"&#96;                        |
-|               | int        | Creates an index for integer fields                                                                                                                                                                                                         | Age int &#96;json:"age" dgraph:"index=int"&#96;                                        |
-|               | geo        | Creates a geolocation index                                                                                                                                                                                                                 | Location &#96;json:"location" dgraph:"index=geo"&#96;                                  |
-|               | day        | Creates a day-based index for datetime fields                                                                                                                                                                                               | Created time.Time &#96;json:"created" dgraph:"index=day"&#96;                          |
-|               | year       | Creates a year-based index for datetime fields                                                                                                                                                                                              | Birthday time.Time &#96;json:"birthday" dgraph:"index=year"&#96;                       |
-|               | month      | Creates a month-based index for datetime fields                                                                                                                                                                                             | Hired time.Time &#96;json:"hired" dgraph:"index=month"&#96;                            |
-|               | hour       | Creates an hour-based index for datetime fields                                                                                                                                                                                             | Login time.Time &#96;json:"login" dgraph:"index=hour"&#96;                             |
-|               | hnsw       | Creates a vector similarity index                                                                                                                                                                                                           | Vector \*dg.VectorFloat32 &#96;json:"vector" dgraph:"index=hnsw(metric:cosine)"&#96;   |
-| **type**      | geo        | Specifies a geolocation field                                                                                                                                                                                                               | Location &#96;json:"location" dgraph:"type=geo"&#96;                                   |
-|               | datetime   | Specifies a datetime field                                                                                                                                                                                                                  | CreatedAt time.Time &#96;json:"createdAt" dgraph:"type=datetime"&#96;                  |
-|               | int        | Specifies an integer field                                                                                                                                                                                                                  | Count int &#96;json:"count" dgraph:"type=int"&#96;                                     |
-|               | float      | Specifies a floating-point field                                                                                                                                                                                                            | Price float64 &#96;json:"price" dgraph:"type=float"&#96;                               |
-|               | bool       | Specifies a boolean field                                                                                                                                                                                                                   | Active bool &#96;json:"active" dgraph:"type=bool"&#96;                                 |
-|               | password   | Specifies a password field (stored securely)                                                                                                                                                                                                | Password string &#96;json:"password" dgraph:"type=password"&#96;                       |
-| **count**     |            | Creates a count index                                                                                                                                                                                                                       | Visits int &#96;json:"visits" dgraph:"count"&#96;                                      |
-| **unique**    |            | Enforces uniqueness for the field                                                                                                                                                                                                           | Email string &#96;json:"email" dgraph:"index=hash unique"&#96;                         |
-| **upsert**    |            | Allows a field to be used in upsert operations                                                                                                                                                                                              | UserID string &#96;json:"userID" dgraph:"index=hash upsert"&#96;                       |
-| **reverse**   |            | Creates a bidirectional edge                                                                                                                                                                                                                | Friends []\*Person &#96;json:"friends" dgraph:"reverse"&#96;                           |
-| **lang**      |            | Enables multi-language support for the field                                                                                                                                                                                                | Description string &#96;json:"description" dgraph:"lang"&#96;                          |
-| **embedding** |            | Marks a `SimString` field for automatic vector embedding. modusGraph calls the configured `EmbeddingProvider` on insert/update and maintains a shadow `<field>__vec` predicate. Can be combined with `index=term` and other string indexes. | Description SimString &#96;json:"description" dgraph:"embedding,index=term"&#96;       |
-|               | metric=    | HNSW index metric (default: `cosine`). Options: `cosine`, `euclidean`, `dotproduct`                                                                                                                                                         | Description SimString &#96;json:"description" dgraph:"embedding,metric=euclidean"&#96; |
-|               | exponent=  | HNSW index exponent controlling index size (default: `4`)                                                                                                                                                                                   | Description SimString &#96;json:"description" dgraph:"embedding,exponent=5"&#96;       |
-|               | threshold= | Minimum rune count required to embed. Texts shorter than this have their shadow vector deleted rather than left stale, preventing false positives. Default: `0` (always embed)                                                              | Description SimString &#96;json:"description" dgraph:"embedding,threshold=20"&#96;     |
+| Directive     | Option     | Description                                                                                                                                                                                                                            | Example                                                                                |
+| ------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **index**     | exact      | Creates an exact-match index for string fields                                                                                                                                                                                         | Name string &#96;json:"name" dgraph:"index=exact"&#96;                                 |
+|               | hash       | Creates a hash index (same as exact)                                                                                                                                                                                                   | Code string &#96;json:"code" dgraph:"index=hash"&#96;                                  |
+|               | term       | Creates a term index for text search                                                                                                                                                                                                   | Description string &#96;json:"description" dgraph:"index=term"&#96;                    |
+|               | fulltext   | Creates a full-text search index                                                                                                                                                                                                       | Content string &#96;json:"content" dgraph:"index=fulltext"&#96;                        |
+|               | int        | Creates an index for integer fields                                                                                                                                                                                                    | Age int &#96;json:"age" dgraph:"index=int"&#96;                                        |
+|               | geo        | Creates a geolocation index                                                                                                                                                                                                            | Location &#96;json:"location" dgraph:"index=geo"&#96;                                  |
+|               | day        | Creates a day-based index for datetime fields                                                                                                                                                                                          | Created time.Time &#96;json:"created" dgraph:"index=day"&#96;                          |
+|               | year       | Creates a year-based index for datetime fields                                                                                                                                                                                         | Birthday time.Time &#96;json:"birthday" dgraph:"index=year"&#96;                       |
+|               | month      | Creates a month-based index for datetime fields                                                                                                                                                                                        | Hired time.Time &#96;json:"hired" dgraph:"index=month"&#96;                            |
+|               | hour       | Creates an hour-based index for datetime fields                                                                                                                                                                                        | Login time.Time &#96;json:"login" dgraph:"index=hour"&#96;                             |
+|               | hnsw       | Creates a vector similarity index                                                                                                                                                                                                      | Vector \*dg.VectorFloat32 &#96;json:"vector" dgraph:"index=hnsw(metric:cosine)"&#96;   |
+| **type**      | geo        | Specifies a geolocation field                                                                                                                                                                                                          | Location &#96;json:"location" dgraph:"type=geo"&#96;                                   |
+|               | datetime   | Specifies a datetime field                                                                                                                                                                                                             | CreatedAt time.Time &#96;json:"createdAt" dgraph:"type=datetime"&#96;                  |
+|               | int        | Specifies an integer field                                                                                                                                                                                                             | Count int &#96;json:"count" dgraph:"type=int"&#96;                                     |
+|               | float      | Specifies a floating-point field                                                                                                                                                                                                       | Price float64 &#96;json:"price" dgraph:"type=float"&#96;                               |
+|               | bool       | Specifies a boolean field                                                                                                                                                                                                              | Active bool &#96;json:"active" dgraph:"type=bool"&#96;                                 |
+|               | password   | Specifies a password field (stored securely)                                                                                                                                                                                           | Password string &#96;json:"password" dgraph:"type=password"&#96;                       |
+| **count**     |            | Creates a count index                                                                                                                                                                                                                  | Visits int &#96;json:"visits" dgraph:"count"&#96;                                      |
+| **unique**    |            | Enforces uniqueness for the field                                                                                                                                                                                                      | Email string &#96;json:"email" dgraph:"index=hash unique"&#96;                         |
+| **upsert**    |            | Allows a field to be used in upsert operations                                                                                                                                                                                         | UserID string &#96;json:"userID" dgraph:"index=hash upsert"&#96;                       |
+| **reverse**   |            | Creates a bidirectional edge                                                                                                                                                                                                           | Friends []\*Person &#96;json:"friends" dgraph:"reverse"&#96;                           |
+| **lang**      |            | Enables multi-language support for the field                                                                                                                                                                                           | Description string &#96;json:"description" dgraph:"lang"&#96;                          |
+| **embedding** |            | Marks a `SimString` field for automatic vector embedding. dgdao calls the configured `EmbeddingProvider` on insert/update and maintains a shadow `<field>__vec` predicate. Can be combined with `index=term` and other string indexes. | Description SimString &#96;json:"description" dgraph:"embedding,index=term"&#96;       |
+|               | metric=    | HNSW index metric (default: `cosine`). Options: `cosine`, `euclidean`, `dotproduct`                                                                                                                                                    | Description SimString &#96;json:"description" dgraph:"embedding,metric=euclidean"&#96; |
+|               | exponent=  | HNSW index exponent controlling index size (default: `4`)                                                                                                                                                                              | Description SimString &#96;json:"description" dgraph:"embedding,exponent=5"&#96;       |
+|               | threshold= | Minimum rune count required to embed. Texts shorter than this have their shadow vector deleted rather than left stale, preventing false positives. Default: `0` (always embed)                                                         | Description SimString &#96;json:"description" dgraph:"embedding,threshold=20"&#96;     |
 
 ### Relationships
 
@@ -313,7 +313,7 @@ type Person struct {
 
 ### Reverse Edges
 
-Reverse edges enable efficient bidirectional graph traversal. modusGraph supports two patterns:
+Reverse edges enable efficient bidirectional graph traversal. dgdao supports two patterns:
 
 **1. Forward edges with automatic reverse indexing** - Use `dgraph:"reverse"` on a forward edge to
 enable querying in both directions:
@@ -329,7 +329,7 @@ type FoafPerson struct {
 ```
 
 **2. Managed reverse edges** - Define relationships from the parent side using the `~predicate` JSON
-tag prefix. When inserting, modusGraph automatically creates the forward edges on child entities:
+tag prefix. When inserting, dgdao automatically creates the forward edges on child entities:
 
 ```go
 // Child: Enrollment has forward edge to Course
@@ -349,7 +349,7 @@ type Course struct {
 }
 ```
 
-With managed reverse edges, you can insert from the parent and modusGraph handles the edge direction
+With managed reverse edges, you can insert from the parent and dgdao handles the edge direction
 automatically:
 
 ```go
@@ -369,7 +369,7 @@ hierarchies and friend-of-a-friend patterns.
 
 ## Basic Operations
 
-modusGraph provides a simple API for common database operations.
+dgdao provides a simple API for common database operations.
 
 ### Inserting Data
 
@@ -397,7 +397,7 @@ fmt.Println("Created user with UID:", user.UID)
 
 ### Upserting Data
 
-modusGraph provides a simple API for upserting data into the database.
+dgdao provides a simple API for upserting data into the database.
 
 ```go
 ctx := context.Background()
@@ -459,7 +459,7 @@ if err != nil {
 
 ### Querying Data
 
-modusGraph provides a basic query API for retrieving data:
+dgdao provides a basic query API for retrieving data:
 
 ```go
 ctx := context.Background()
@@ -503,7 +503,7 @@ if err != nil {
 
 ### Advanced Querying
 
-modusGraph is built on top of the [dgman](https://github.com/dolan-in/dgman) package, which provides
+dgdao is built on top of the [dgman](https://github.com/dolan-in/dgman) package, which provides
 access to Dgraph's more powerful and complete query capabilities. For advanced use cases, you can
 access the underlying Dgraph client directly and construct more sophisticated queries:
 
@@ -557,7 +557,7 @@ This example demonstrates vector similarity search for finding semantically simi
 powerful feature in Dgraph. You can also access other advanced capabilities like full-text search
 with language-specific analyzers, geolocation queries, and more. The ability to access the raw
 Dgraph client gives you the full power of Dgraph's query language while still benefiting from
-modusGraph's simplified client interface and schema management.
+dgdao's simplified client interface and schema management.
 
 ## Atomic Operations (`LoadOrStore` and `LoadAndDelete`)
 
@@ -623,7 +623,7 @@ at least once.
 ```go
 ctx := context.Background()
 
-err := client.WithRetry(ctx, modusgraph.DefaultRetryPolicy, func() error {
+err := client.WithRetry(ctx, dgdao.DefaultRetryPolicy, func() error {
     return client.Insert(ctx, &user)
 })
 if err != nil {
@@ -635,7 +635,7 @@ if err != nil {
 the schedule, pass your own `RetryPolicy`:
 
 ```go
-policy := modusgraph.RetryPolicy{
+policy := dgdao.RetryPolicy{
     MaxRetries: 5,                      // retry attempts after the initial try
     BaseDelay:  50 * time.Millisecond,  // grows exponentially: BaseDelay * 2^attempt
     MaxDelay:   2 * time.Second,        // caps any single delay
@@ -653,7 +653,7 @@ example, surfaces to the caller on the first attempt rather than being retried.
 
 ## Typed Client (Generic, Type-Safe API)
 
-The `typed` package wraps `modusgraph.Client` in a Go generic layer that binds one Go type to the
+The `typed` package wraps `dgdao.Client` in a Go generic layer that binds one Go type to the
 otherwise `any`-typed client. You get compile-time-typed CRUD and a fluent query builder with no
 per-entity code generation. It composes on the same dgman primitives the base client uses, so it
 adds type safety without surrendering any of Dgraph's query power.
@@ -663,7 +663,7 @@ destination slice, builds the query, decodes, and re-asserts the type. The typed
 repeated shape into the type system once.
 
 ```go
-import "github.com/matthewmcneely/modusgraph/typed"
+import "github.com/dgraph-io/dgdao/typed"
 
 // Bind the client to User once.
 users := typed.NewClient[User](client)
@@ -730,13 +730,12 @@ The companion `typed/filter` and `typed/search` packages add a parameterised fil
 builder and helpers for merging ranked results across blocks.
 
 For the full API, the design rationale, and runnable examples, see the package documentation
-(`go doc github.com/matthewmcneely/modusgraph/typed`) and the `example_test.go` files under
-`typed/`.
+(`go doc github.com/dgraph-io/dgdao/typed`) and the `example_test.go` files under `typed/`.
 
 ## Automatic Similarity Search (`SimString`)
 
 `SimString` is a string type that transparently manages vector embeddings and HNSW-indexed shadow
-predicates. When a struct field of this type is tagged with `dgraph:"embedding"`, modusGraph
+predicates. When a struct field of this type is tagged with `dgraph:"embedding"`, dgdao
 automatically calls the configured `EmbeddingProvider` on every insert, upsert, and update, storing
 the resulting vector in a `<fieldname>__vec` shadow predicate. This eliminates the need to manually
 maintain `VectorFloat32` fields or call embedding APIs.
@@ -746,7 +745,7 @@ maintain `VectorFloat32` fields or call embedding APIs.
 Configure an embedding provider when creating the client:
 
 ```go
-import mg "github.com/matthewmcneely/modusgraph"
+import mg "github.com/dgraph-io/dgdao"
 
 // OpenAICompatibleProvider works with OpenAI, Ollama, and any OpenAI-compatible endpoint.
 provider := mg.NewOpenAICompatibleProvider(mg.OpenAICompatibleConfig{
@@ -852,13 +851,12 @@ type EmbeddingProvider interface {
 
 ## Schema Management
 
-modusGraph provides robust schema management features that simplify working with Dgraph's schema
-system.
+dgdao provides robust schema management features that simplify working with Dgraph's schema system.
 
 ### AutoSchema
 
 The AutoSchema feature automatically generates and updates the database schema based on your Go
-struct definitions. When enabled, modusGraph will analyze the struct tags of objects you insert and
+struct definitions. When enabled, dgdao will analyze the struct tags of objects you insert and
 ensure the appropriate schema exists in the database.
 
 Enable AutoSchema when creating a client:
@@ -880,7 +878,7 @@ user := User{
 err = client.Insert(ctx, &user)
 ```
 
-With AutoSchema enabled, modusGraph will:
+With AutoSchema enabled, dgdao will:
 
 1. Analyze the struct tags of objects being inserted
 2. Generate the appropriate Dgraph schema based on these tags
@@ -896,8 +894,7 @@ the type of a field will not convert existing data to the new type.
 
 ### Schema Operations
 
-For more control over schema management, modusGraph provides several methods in the Client
-interface:
+For more control over schema management, dgdao provides several methods in the Client interface:
 
 #### UpdateSchema
 
@@ -977,22 +974,22 @@ These operations are useful for testing or when you need to reset your database 
 
 ## Limitations
 
-modusGraph has a few limitations to be aware of:
+dgdao has a few limitations to be aware of:
 
-- **Schema evolution**: While modusGraph supports schema inference through tags, evolving an
-  existing schema with new fields requires careful consideration to avoid data inconsistencies.
+- **Schema evolution**: While dgdao supports schema inference through tags, evolving an existing
+  schema with new fields requires careful consideration to avoid data inconsistencies.
 
 ## CLI Commands and Examples
 
-modusGraph provides several command-line tools and example applications to help you interact with
-and explore the package. These are organized in the `cmd` and `examples` folders:
+dgdao provides several command-line tools and example applications to help you interact with and
+explore the package. These are organized in the `cmd` and `examples` folders:
 
 ### Commands (`cmd` folder)
 
 - **`cmd/query`**: A flexible CLI tool for running arbitrary DQL (Dgraph Query Language) queries
-  against a modusGraph database.
+  against a dgdao database.
   - Reads a query from standard input and prints JSON results.
-  - Supports file-based modusGraph storage.
+  - Supports file-based dgdao storage.
   - Flags: `--dir`, `--pretty`, `--timeout`, `-v` (verbosity).
   - See [`cmd/query/README.md`](./cmd/query/README.md) for usage and examples.
 
@@ -1004,7 +1001,7 @@ and explore the package. These are organized in the `cmd` and `examples` folders
   - Supports create, update, delete, get, and list commands.
   - See [`examples/basic/README.md`](./examples/basic/README.md) for details.
 
-- **`examples/load`**: Shows how to load the standard 1million RDF dataset into modusGraph for
+- **`examples/load`**: Shows how to load the standard 1million RDF dataset into dgdao for
   benchmarking.
 
   - Downloads, initializes, and loads the dataset into a specified directory.
@@ -1012,42 +1009,39 @@ and explore the package. These are organized in the `cmd` and `examples` folders
   - See [`examples/load/README.md`](./examples/load/README.md) for instructions.
 
 You can use these tools as starting points for your own applications or as references for
-integrating modusGraph into your workflow.
+integrating dgdao into your workflow.
 
 ## Open Source
 
 We welcome external contributions. See the [CONTRIBUTING.md](./CONTRIBUTING.md) file if you would
 like to get involved.
 
-Modus and its components are © Istari Digital, Inc., and licensed under the terms of the Apache
-License, Version 2.0. See the [LICENSE](./LICENSE) file for a complete copy of the license. If you
-have any questions about modus licensing, or need an alternate license or other arrangement, please
-contact us at <dgraph-admin@istaridigital.com>.
+dgdao and its components are © Istari Digital, Inc., and licensed under the terms of the Apache
+License, Version 2.0. See the [LICENSE](./LICENSE) file for a complete copy of the license.
 
 ## Windows Users
 
-modusGraph (and its dependencies) are designed to work on POSIX-compliant operating systems, and are
-not guaranteed to work on Windows.
+dgdao (and its dependencies) are designed to work on POSIX-compliant operating systems, and are not
+guaranteed to work on Windows.
 
 Tests at the top level folder (`go test .`) on Windows are maintained to pass on Windows, but other
 tests in subfolders may not work as expected.
 
 Temporary folders created during tests may not be cleaned up properly on Windows. Users should
 periodically clean up these folders. The temporary folders are created in the Windows temp
-directory, `C:\Users\<username>\AppData\Local\Temp\modusgraph_test*`.
+directory, `C:\Users\<username>\AppData\Local\Temp\dgdao_test*`.
 
 ## Contributing
 
-See the [CONTRIBUTING.md](./CONTRIBUTING.md) file for information on how to contribute to
-modusGraph.
+See the [CONTRIBUTING.md](./CONTRIBUTING.md) file for information on how to contribute to dgdao.
 
 ## Acknowledgements
 
-modusGraph builds heavily upon packages from the open source projects of
+dgdao builds heavily upon packages from the open source projects of
 [Dgraph](https://github.com/dgraph-io/dgraph) (graph query processing and transaction management),
 [Badger](https://github.com/dgraph-io/badger) (data storage), and
-[Ristretto](https://github.com/dgraph-io/ristretto) (cache). modusGraph also relies on the
+[Ristretto](https://github.com/dgraph-io/ristretto) (cache). dgdao also relies on the
 [dgman](https://github.com/dolan-in/dgman) repository for much of its functionality. We expect the
-architecture and implementations of modusGraph and Dgraph to expand in differentiation over time as
-the projects optimize for different core use cases, while maintaining Dgraph Query Language (DQL)
+architecture and implementations of dgdao and Dgraph to expand in differentiation over time as the
+projects optimize for different core use cases, while maintaining Dgraph Query Language (DQL)
 compatibility.

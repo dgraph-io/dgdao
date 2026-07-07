@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package modusgraph_test
+package dgdao_test
 
 import (
 	"context"
@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/dgraph-io/dgdao"
 	"github.com/dgraph-io/dgo/v250/protos/api"
 	"github.com/dgraph-io/dgraph/v25/dgraphapi"
-	"github.com/matthewmcneely/modusgraph"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +24,7 @@ const (
 )
 
 func TestVectorDelete(t *testing.T) {
-	engine, err := modusgraph.NewEngine(modusgraph.NewDefaultConfig(t.TempDir()))
+	engine, err := dgdao.NewEngine(dgdao.NewDefaultConfig(t.TempDir()))
 	require.NoError(t, err)
 	defer engine.Close()
 
@@ -100,7 +100,7 @@ func TestVectorDelete(t *testing.T) {
 	_ = queryVectors(t, engine, fmt.Sprintf(q3, strings.Split(triple, `"`)[1]))
 }
 
-func queryVectors(t *testing.T, engine *modusgraph.Engine, query string) [][]float32 {
+func queryVectors(t *testing.T, engine *dgdao.Engine, query string) [][]float32 {
 	resp, err := engine.GetDefaultNamespace().Query(context.Background(), query)
 	require.NoError(t, err)
 

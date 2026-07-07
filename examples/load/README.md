@@ -1,8 +1,8 @@
-# modusGraph 1Million Dataset Loader
+# dgdao 1Million Dataset Loader
 
-This command-line application demonstrates how to load the 1million dataset into modusGraph. The
-1million dataset consists of approximately one million RDF triples representing relationships
-between various entities and is commonly used for benchmarking graph database performance.
+This command-line application demonstrates how to load the 1million dataset into dgdao. The 1million
+dataset consists of approximately one million RDF triples representing relationships between various
+entities and is commonly used for benchmarking graph database performance.
 
 ## Requirements
 
@@ -20,24 +20,24 @@ cd examples/load
 go run main.go --dir /path/to/data/directory
 
 # Or build and then run
-go build -o modusgraph-loader
-./modusgraph-loader --dir /path/to/data/directory
+go build -o dgdao-loader
+./dgdao-loader --dir /path/to/data/directory
 ```
 
 ### Command Line Options
 
 ```sh
-Usage of ./modusgraph-loader:
-  --dir string         Directory where modusGraph will initialize and store the 1million dataset (required)
+Usage of ./dgdao-loader:
+  --dir string         Directory where dgdao will initialize and store the 1million dataset (required)
   --verbosity int     Verbosity level (0-2) (default 1)
 ```
 
 ## How It Works
 
 1. The application creates the specified directory if it doesn't exist
-2. It initializes a modusGraph engine in that directory
+2. It initializes a dgdao engine in that directory
 3. Downloads the 1million schema and RDF data files from the Dgraph benchmarks repository
-4. Drops any existing data in the modusGraph instance
+4. Drops any existing data in the dgdao instance
 5. Loads the schema and RDF data into the database
 6. Provides progress and timing information
 
@@ -49,11 +49,11 @@ Usage of ./modusgraph-loader:
 
 ## Using the Loaded Dataset
 
-After loading is complete, you can use the database in other applications by initializing modusGraph
-with the same directory:
+After loading is complete, you can use the database in other applications by initializing dgdao with
+the same directory:
 
 ```go
-// Initialize modusGraph client with the same directory
+// Initialize dgdao client with the same directory
 client, err := mg.NewClient("file:///path/to/data/directory")
 if err != nil {
     // handle error

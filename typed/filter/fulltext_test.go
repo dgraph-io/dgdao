@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/matthewmcneely/modusgraph/typed/filter"
+	"github.com/dgraph-io/dgdao/typed/filter"
 )
 
 func TestAnyOfTextEmitsFilterAndBindsParam(t *testing.T) {

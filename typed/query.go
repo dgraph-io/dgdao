@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/dgraph-io/dgdao"
 	dg "github.com/dolan-in/dgman/v2"
-	"github.com/matthewmcneely/modusgraph"
 )
 
 // ErrDetachedQuery is returned by a terminal (Nodes, First, NodesAndCount,
@@ -59,12 +59,12 @@ const (
 // within — a Limit caps the rows it streams, an Offset is its start.
 type Query[T any] struct {
 	q       *dg.Query
-	conn    modusgraph.Client // runs the WhereEdge pre-pass; set by Client.Query
-	ctx     context.Context   // carried for the WhereEdge pre-pass query
-	limit   int               // caller-set row cap; 0 = unbounded
-	offset  int               // caller-set starting offset; 0 = none
-	edges   []edgeFilter      // accumulated WhereEdge constraints; empty = none
-	filters []filterFrag      // accumulated @filter fragments, ANDed; empty = none
+	conn    dgdao.Client    // runs the WhereEdge pre-pass; set by Client.Query
+	ctx     context.Context // carried for the WhereEdge pre-pass query
+	limit   int             // caller-set row cap; 0 = unbounded
+	offset  int             // caller-set starting offset; 0 = none
+	edges   []edgeFilter    // accumulated WhereEdge constraints; empty = none
+	filters []filterFrag    // accumulated @filter fragments, ANDed; empty = none
 
 	// customRootExpr is the caller's root narrowing (set by UID or RootFunc), or
 	// "" if none. The WhereEdge var block roots at it, so the matched UIDs are the
