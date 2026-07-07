@@ -18,7 +18,7 @@ import (
 
 	"github.com/dgraph-io/dgo/v250"
 	"github.com/dgraph-io/dgo/v250/protos/api"
-	dg "github.com/dolan-in/dgman/v2"
+	"github.com/dolan-in/dgman/v2"
 	"github.com/go-logr/logr"
 	"github.com/go-playground/validator/v10"
 	"google.golang.org/grpc"
@@ -65,8 +65,8 @@ type Client interface {
 	Get(context.Context, any, string) error
 
 	// Query creates a new query builder for retrieving data from the database.
-	// Returns a *dg.Query that can be further refined with filters, pagination, etc.
-	Query(context.Context, any) *dg.Query
+	// Returns a *dgman.Query that can be further refined with filters, pagination, etc.
+	Query(context.Context, any) *dgman.Query
 
 	// Delete removes objects with the specified UIDs from the database.
 	Delete(context.Context, []string) error
@@ -350,7 +350,7 @@ func NewClient(uri string, opts ...ClientOpt) (Client, error) {
 			}
 		}
 		client.pool = newClientPool(options.poolSize, factory, client.logger)
-		dg.SetLogger(client.logger)
+		dgman.SetLogger(client.logger)
 		clientMap[key] = client
 		return client, nil
 	case strings.HasPrefix(uri, fileURIPrefix):
@@ -387,7 +387,7 @@ func NewClient(uri string, opts ...ClientOpt) (Client, error) {
 			//nolint:staticcheck // dgo.NewDgraphClient is deprecated but required for embedded client
 			return dgo.NewDgraphClient(embeddedClient), nil
 		}, client.logger)
-		dg.SetLogger(client.logger)
+		dgman.SetLogger(client.logger)
 		clientMap[key] = client
 		return client, nil
 	}
@@ -611,7 +611,7 @@ func (c client) Insert(ctx context.Context, obj any) error {
 		return err
 	}
 
-	return c.process(ctx, obj, "Insert", func(tx *dg.TxnContext, obj any) ([]string, error) {
+	return c.process(ctx, obj, "Insert", func(tx *dgman.TxnContext, obj any) ([]string, error) {
 		return tx.MutateBasic(obj)
 	})
 }
@@ -629,7 +629,7 @@ func (c client) InsertRaw(ctx context.Context, obj any) error {
 		return err
 	}
 
-	return c.process(ctx, obj, "Insert", func(tx *dg.TxnContext, obj any) ([]string, error) {
+	return c.process(ctx, obj, "Insert", func(tx *dgman.TxnContext, obj any) ([]string, error) {
 		return tx.MutateBasic(obj)
 	})
 }
@@ -645,7 +645,7 @@ func (c client) Upsert(ctx context.Context, obj any, predicates ...string) error
 		return err
 	}
 
-	return c.process(ctx, obj, "Upsert", func(tx *dg.TxnContext, obj any) ([]string, error) {
+	return c.process(ctx, obj, "Upsert", func(tx *dgman.TxnContext, obj any) ([]string, error) {
 		return tx.Upsert(obj, predicates...)
 	})
 }
@@ -675,7 +675,7 @@ func (c client) LoadOrStore(ctx context.Context, obj any, predicates ...string) 
 	}
 	defer c.pool.put(dgClient)
 
-	tx := dg.NewTxnContext(ctx, dgClient).SetCommitNow()
+	tx := dgman.NewTxnContext(ctx, dgClient).SetCommitNow()
 	uids, err := tx.MutateOrGet(obj, predicates...)
 	if err != nil {
 		if uniqueErr := parseUniqueError(err); uniqueErr != nil {
@@ -838,7 +838,7 @@ func (c client) LoadAndDelete(ctx context.Context, obj any, key any, predicates 
 	// reads the node already gone and reports not-found.
 	const maxAttempts = 10
 	for attempt := 0; ; attempt++ {
-		tx := dg.NewTxnContext(ctx, dgClient)
+		tx := dgman.NewTxnContext(ctx, dgClient)
 		getErr := tx.Get(obj).
 			Filter("eq("+pred+", $1)", key).
 			All(c.options.maxEdgeTraversal).
@@ -846,7 +846,7 @@ func (c client) LoadAndDelete(ctx context.Context, obj any, key any, predicates 
 		if getErr != nil {
 			_ = tx.Discard()
 			// dgman returns ErrNodeNotFound when nothing matches.
-			if errors.Is(getErr, dg.ErrNodeNotFound) {
+			if errors.Is(getErr, dgman.ErrNodeNotFound) {
 				// Honor the documented contract: obj is zero when loaded=false.
 				// A prior attempt's Get (before a commit abort) may have hydrated
 				// obj, and the caller may have passed a pre-populated struct.
@@ -909,7 +909,7 @@ func (c client) Update(ctx context.Context, obj any) error {
 		return err
 	}
 
-	return c.process(ctx, obj, "Update", func(tx *dg.TxnContext, obj any) ([]string, error) {
+	return c.process(ctx, obj, "Update", func(tx *dgman.TxnContext, obj any) ([]string, error) {
 		return tx.MutateBasic(obj)
 	})
 }
@@ -923,7 +923,7 @@ func (c client) Delete(ctx context.Context, uids []string) error {
 	}
 	defer c.pool.put(client)
 
-	txn := dg.NewTxnContext(ctx, client).SetCommitNow()
+	txn := dgman.NewTxnContext(ctx, client).SetCommitNow()
 	return txn.DeleteNode(uids...)
 }
 
@@ -942,13 +942,13 @@ func (c client) Get(ctx context.Context, obj any, uid string) error {
 	}
 	defer c.pool.put(client)
 
-	txn := dg.NewReadOnlyTxnContext(ctx, client)
+	txn := dgman.NewReadOnlyTxnContext(ctx, client)
 	return txn.Get(obj).UID(uid).All(c.options.maxEdgeTraversal).Node()
 }
 
-// Returns a *dg.Query that can be further refined with filters, pagination, etc.
+// Returns a *dgman.Query that can be further refined with filters, pagination, etc.
 // The returned query will be limited to the maximum number of edges specified in the options.
-func (c client) Query(ctx context.Context, model any) *dg.Query {
+func (c client) Query(ctx context.Context, model any) *dgman.Query {
 	model = UnwrapSchema(model)
 	client, err := c.pool.get()
 	if err != nil {
@@ -956,7 +956,7 @@ func (c client) Query(ctx context.Context, model any) *dg.Query {
 	}
 	defer c.pool.put(client)
 
-	txn := dg.NewReadOnlyTxnContext(ctx, client)
+	txn := dgman.NewReadOnlyTxnContext(ctx, client)
 	return txn.Get(model).All(c.options.maxEdgeTraversal)
 }
 
@@ -988,7 +988,7 @@ func (c client) UpdateSchema(ctx context.Context, obj ...any) error {
 	}
 	defer c.pool.put(dgClient)
 
-	if _, err = dg.CreateSchema(dgClient, obj...); err != nil {
+	if _, err = dgman.CreateSchema(dgClient, obj...); err != nil {
 		return err
 	}
 
@@ -1016,7 +1016,7 @@ func (c client) GetSchema(ctx context.Context) (string, error) {
 	}
 	defer c.pool.put(client)
 
-	return dg.GetSchema(client)
+	return dgman.GetSchema(client)
 }
 
 // DropAll implements dropping all data and schema from the database.
@@ -1052,7 +1052,7 @@ func (c client) QueryRaw(ctx context.Context, q string, vars map[string]string) 
 	}
 	defer c.pool.put(client)
 
-	txn := dg.NewReadOnlyTxnContext(ctx, client)
+	txn := dgman.NewReadOnlyTxnContext(ctx, client)
 	resp, err := txn.Txn().QueryWithVars(ctx, q, vars)
 	if err != nil {
 		return nil, err

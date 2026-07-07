@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 )
 
 // This example is featured on the repo README
@@ -27,7 +27,7 @@ type TestEntity struct {
 }
 
 func main() {
-	client, err := mg.NewClient("file:///tmp/dgdao", mg.WithAutoSchema(true))
+	client, err := dg.NewClient("file:///tmp/dgdao", dg.WithAutoSchema(true))
 	if err != nil {
 		panic(err)
 	}

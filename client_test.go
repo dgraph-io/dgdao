@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,7 +42,7 @@ func TestClientPool(t *testing.T) {
 			}
 
 			// Create a client with pool size 10
-			client, err := mg.NewClient(tc.uri, mg.WithPoolSize(10))
+			client, err := dg.NewClient(tc.uri, dg.WithPoolSize(10))
 			require.NoError(t, err)
 			defer client.Close()
 
@@ -112,7 +112,7 @@ func TestClientPool(t *testing.T) {
 	}
 
 	// Shutdown at the end of the test to ensure the next test can start fresh
-	mg.Shutdown()
+	dg.Shutdown()
 }
 
 func TestClientPoolStress(t *testing.T) {
@@ -139,7 +139,7 @@ func TestClientPoolStress(t *testing.T) {
 			}
 
 			// Create a client with pool size 10
-			client, err := mg.NewClient(tc.uri, mg.WithPoolSize(10))
+			client, err := dg.NewClient(tc.uri, dg.WithPoolSize(10))
 			require.NoError(t, err)
 			defer func() {
 				client.Close()
@@ -206,7 +206,7 @@ func TestClientPoolStress(t *testing.T) {
 			require.Greater(t, successCount, 0)
 		})
 
-		mg.Shutdown()
+		dg.Shutdown()
 	}
 }
 
@@ -234,7 +234,7 @@ func TestClientPoolMisuse(t *testing.T) {
 			}
 
 			// Create a client with pool size 10
-			client, err := mg.NewClient(tc.uri, mg.WithPoolSize(10))
+			client, err := dg.NewClient(tc.uri, dg.WithPoolSize(10))
 			require.NoError(t, err)
 			client.Close()
 			client.Close()
@@ -242,23 +242,23 @@ func TestClientPoolMisuse(t *testing.T) {
 	}
 
 	// Shutdown at the end of the test to ensure the next test can start fresh
-	mg.Shutdown()
+	dg.Shutdown()
 }
 
 func TestLocalClientSingleton(t *testing.T) {
 	path := GetTempDir(t)
-	client, err := mg.NewClient("file://" + path)
+	client, err := dg.NewClient("file://" + path)
 	require.NoError(t, err)
 	defer client.Close()
 
-	client2, err := mg.NewClient("file://" + path)
+	client2, err := dg.NewClient("file://" + path)
 	require.NoError(t, err)
 	require.Equal(t, client, client2, "Expected the same client instance")
 	defer client2.Close()
 
-	_, err = mg.NewClient("file://"+path, mg.WithAutoSchema(true)) // will create a new client "key"
+	_, err = dg.NewClient("file://"+path, dg.WithAutoSchema(true)) // will create a new client "key"
 	require.Error(t, err, "Expected an error when creating a new client with different options")
-	require.ErrorIs(t, err, mg.ErrSingletonOnly)
+	require.ErrorIs(t, err, dg.ErrSingletonOnly)
 }
 
 func TestRemoteClientAccess(t *testing.T) {
@@ -267,16 +267,16 @@ func TestRemoteClientAccess(t *testing.T) {
 		t.Skip("Skipping test as DGDAO_TEST_ADDR is not set")
 	}
 
-	client, err := mg.NewClient("dgraph://" + os.Getenv("DGDAO_TEST_ADDR"))
+	client, err := dg.NewClient("dgraph://" + os.Getenv("DGDAO_TEST_ADDR"))
 	require.NoError(t, err)
 	defer client.Close()
 
-	client2, err := mg.NewClient("dgraph://" + os.Getenv("DGDAO_TEST_ADDR"))
+	client2, err := dg.NewClient("dgraph://" + os.Getenv("DGDAO_TEST_ADDR"))
 	require.NoError(t, err)
 	require.Equal(t, client, client2, "Expected the same client instance")
 	defer client2.Close()
 
-	client3, err := mg.NewClient("dgraph://"+os.Getenv("DGDAO_TEST_ADDR"), mg.WithAutoSchema(true))
+	client3, err := dg.NewClient("dgraph://"+os.Getenv("DGDAO_TEST_ADDR"), dg.WithAutoSchema(true))
 	require.NoError(t, err)
 	require.NotEqual(t, client, client3, "Expected a different client instance")
 	defer client3.Close()
@@ -329,10 +329,10 @@ func TestClientValidator(t *testing.T) {
 			}
 
 			// Create a validator instance
-			validate := mg.NewValidator()
+			validate := dg.NewValidator()
 
 			// Create a client with validator and AutoSchema
-			client, err := mg.NewClient(tc.uri, mg.WithValidator(validate), mg.WithAutoSchema(true))
+			client, err := dg.NewClient(tc.uri, dg.WithValidator(validate), dg.WithAutoSchema(true))
 			require.NoError(t, err)
 			defer client.Close()
 
@@ -441,7 +441,7 @@ func TestClientInvalidNamespace(t *testing.T) {
 			// but we can test the parseNamespaceID logic indirectly
 			if tc.expectErr {
 				// Try to create a client with invalid namespace - should fail at parse level
-				_, err := mg.NewClient("file://"+t.TempDir(), mg.WithNamespace(tc.namespace))
+				_, err := dg.NewClient("file://"+t.TempDir(), dg.WithNamespace(tc.namespace))
 				if err != nil {
 					if strings.Contains(err.Error(), "only one instance") {
 						t.Skip("Skipping due to singleton engine")

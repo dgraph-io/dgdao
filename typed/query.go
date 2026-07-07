@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/dgraph-io/dgdao"
-	dg "github.com/dolan-in/dgman/v2"
+	"github.com/dolan-in/dgman/v2"
 )
 
 // ErrDetachedQuery is returned by a terminal (Nodes, First, NodesAndCount,
@@ -58,7 +58,7 @@ const (
 // Limit and Offset additionally record the bounds that IterNodes pages
 // within — a Limit caps the rows it streams, an Offset is its start.
 type Query[T any] struct {
-	q       *dg.Query
+	q       *dgman.Query
 	conn    dgdao.Client    // runs the WhereEdge pre-pass; set by Client.Query
 	ctx     context.Context // carried for the WhereEdge pre-pass query
 	limit   int             // caller-set row cap; 0 = unbounded
@@ -414,7 +414,7 @@ func (qb *Query[T]) IterNodes() iter.Seq2[*T, error] {
 // Raw returns the underlying dgman query for operations Query does not wrap
 // (for example the raw-selection Query method). Raw does not carry WhereEdge
 // constraints — those are resolved only when a terminal runs.
-func (qb *Query[T]) Raw() *dg.Query {
+func (qb *Query[T]) Raw() *dgman.Query {
 	return qb.q
 }
 
@@ -474,7 +474,7 @@ func (qb *Query[T]) FormatBlock(name string) (string, error) {
 		return "", fmt.Errorf("typed: FormatBlock cannot render a Query carrying WhereEdge constraints")
 	}
 	qb.q.Name(name)
-	wrapped := dg.NewQueryBlock(qb.q).String()
+	wrapped := dgman.NewQueryBlock(qb.q).String()
 	// QueryBlock.String() wraps the block in "{\n ... }" — strip the wrapper so
 	// the caller can compose blocks inside their own braces.
 	inner := strings.TrimPrefix(wrapped, "{\n")
@@ -487,11 +487,11 @@ func (qb *Query[T]) FormatBlock(name string) (string, error) {
 // deliberately exposes no typed node terminal: its result must be decoded by
 // the caller through the underlying dgman query, obtained via Raw.
 type RawQuery struct {
-	q *dg.Query
+	q *dgman.Query
 }
 
 // Raw returns the underlying dgman query, for the caller to execute and decode.
-func (r *RawQuery) Raw() *dg.Query {
+func (r *RawQuery) Raw() *dgman.Query {
 	return r.q
 }
 
@@ -529,7 +529,7 @@ func (r *RawQuery) GroupBy(predicate string) *RawQuery {
 // IterNodes can call runEdge once per page (each page re-resolves the var
 // server-side).
 func (qb *Query[T]) runEdge(withCount bool) (rows []T, count int, err error) {
-	block := dg.NewQueryBlock(qb.edgeBlocks(withCount)...)
+	block := dgman.NewQueryBlock(qb.edgeBlocks(withCount)...)
 	// Forward any GraphQL named variables set via Vars: dgman renders the
 	// "query <funcDef>" declaration only when the QueryBlock carries them, and
 	// QueryRaw binds them at execution.
@@ -570,7 +570,7 @@ func (qb *Query[T]) runEdge(withCount bool) (rows []T, count int, err error) {
 // accumulated qb.filters untouched, so it is safe to call once per IterNodes
 // page. The caller's @filter is captured before the uid() term is appended, so
 // the count block re-applies the same user filter without it.
-func (qb *Query[T]) edgeBlocks(withCount bool) []*dg.Query {
+func (qb *Query[T]) edgeBlocks(withCount bool) []*dgman.Query {
 	userExpr, userParams := combineAnd(qb.filters)
 
 	dataExpr := "uid(" + edgeVarName + ")"
@@ -579,7 +579,7 @@ func (qb *Query[T]) edgeBlocks(withCount bool) []*dg.Query {
 	}
 	qb.q.Filter(dataExpr, userParams...).Name(edgeDataBlock)
 
-	blocks := []*dg.Query{qb.edgeVarBlock(), qb.q}
+	blocks := []*dgman.Query{qb.edgeVarBlock(), qb.q}
 	if withCount {
 		blocks = append(blocks, qb.edgeCountBlock(userExpr, userParams))
 	}
@@ -590,7 +590,7 @@ func (qb *Query[T]) edgeBlocks(withCount bool) []*dg.Query {
 // @cascade over every WhereEdge constraint. It roots at the caller's narrowing
 // (UID/RootFunc) when present, so mgMatched is the intersection of the caller's
 // root and the edge constraints rather than discarding the caller's root.
-func (qb *Query[T]) edgeVarBlock() *dg.Query {
+func (qb *Query[T]) edgeVarBlock() *dgman.Query {
 	var z T
 	body, params := qb.edgeMatchBody()
 	v := qb.conn.Query(qb.ctx, &z)
@@ -604,7 +604,7 @@ func (qb *Query[T]) edgeVarBlock() *dg.Query {
 // edgeCountBlock builds the count block: count(uid) over uid(mgMatched) with the
 // caller's @filter re-applied, so the total matches the rows the data block
 // would return without pagination.
-func (qb *Query[T]) edgeCountBlock(userExpr string, userParams []any) *dg.Query {
+func (qb *Query[T]) edgeCountBlock(userExpr string, userParams []any) *dgman.Query {
 	var z T
 	c := qb.conn.Query(qb.ctx, &z)
 	c.RootFunc("uid(" + edgeVarName + ")")

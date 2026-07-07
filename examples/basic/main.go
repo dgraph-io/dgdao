@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/stdr"
 )
@@ -100,11 +100,11 @@ func main() {
 	}
 
 	// Initialize dgdao client with logger
-	client, err := mg.NewClient(endpoint,
+	client, err := dg.NewClient(endpoint,
 		// Auto schema will update the schema each time a mutation event is received
-		mg.WithAutoSchema(true),
+		dg.WithAutoSchema(true),
 		// Logger will log events to the console
-		mg.WithLogger(logger))
+		dg.WithLogger(logger))
 	if err != nil {
 		logger.Error(err, "Failed to initialize dgdao client")
 		os.Exit(1)
@@ -138,7 +138,7 @@ func main() {
 
 // createThread creates a new Thread in the database. Note that this function does
 // not check for existing threads with the same name and workspace ID.
-func createThread(client mg.Client, logger logr.Logger, name, workspaceID, createdBy string) error {
+func createThread(client dg.Client, logger logr.Logger, name, workspaceID, createdBy string) error {
 	thread := Thread{
 		Name:        name,
 		WorkspaceID: workspaceID,
@@ -159,7 +159,7 @@ func createThread(client mg.Client, logger logr.Logger, name, workspaceID, creat
 }
 
 // updateThread updates an existing Thread in the database
-func updateThread(client mg.Client, logger logr.Logger, uid, name, workspaceID, createdBy string) error {
+func updateThread(client dg.Client, logger logr.Logger, uid, name, workspaceID, createdBy string) error {
 	// First get the existing Thread
 	ctx := context.Background()
 	var thread Thread
@@ -204,7 +204,7 @@ func truncateString(s string, maxLen int) string {
 }
 
 // deleteThread deletes a Thread from the database
-func deleteThread(client mg.Client, logger logr.Logger, uid string) error {
+func deleteThread(client dg.Client, logger logr.Logger, uid string) error {
 	ctx := context.Background()
 	var thread Thread
 	// First get the Thread to confirm it exists and to show what's being deleted
@@ -227,7 +227,7 @@ func deleteThread(client mg.Client, logger logr.Logger, uid string) error {
 }
 
 // getThread retrieves a Thread by UID
-func getThread(client mg.Client, logger logr.Logger, uid string) error {
+func getThread(client dg.Client, logger logr.Logger, uid string) error {
 	ctx := context.Background()
 	var thread Thread
 	err := client.Get(ctx, &thread, uid)
@@ -251,7 +251,7 @@ func getThread(client mg.Client, logger logr.Logger, uid string) error {
 }
 
 // listThreads retrieves all Threads
-func listThreads(client mg.Client, logger logr.Logger, workspaceID string) error {
+func listThreads(client dg.Client, logger logr.Logger, workspaceID string) error {
 	ctx := context.Background()
 	var threads []Thread
 

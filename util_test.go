@@ -16,14 +16,14 @@ import (
 	"testing"
 	"time"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 	"github.com/go-logr/stdr"
 	"github.com/stretchr/testify/require"
 )
 
 // CreateTestClient creates a new dgdao client for testing purposes with a configured logger.
 // It returns the client and a cleanup function that should be deferred by the caller.
-func CreateTestClient(t *testing.T, uri string) (mg.Client, func()) {
+func CreateTestClient(t *testing.T, uri string) (dg.Client, func()) {
 
 	stdLogger := log.New(os.Stdout, "", log.LstdFlags)
 	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("mg")
@@ -39,7 +39,7 @@ func CreateTestClient(t *testing.T, uri string) (mg.Client, func()) {
 		}
 	}
 
-	client, err := mg.NewClient(uri, mg.WithAutoSchema(true), mg.WithLogger(logger))
+	client, err := dg.NewClient(uri, dg.WithAutoSchema(true), dg.WithLogger(logger))
 	require.NoError(t, err)
 
 	// Drop all data at test START to ensure clean state
@@ -59,7 +59,7 @@ func CreateTestClient(t *testing.T, uri string) (mg.Client, func()) {
 		client.Close()
 
 		// Properly shutdown the engine and reset the singleton state
-		mg.Shutdown()
+		dg.Shutdown()
 	}
 
 	return client, cleanup

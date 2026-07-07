@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 )
 
 // Event carries a cross-field rule that struct tags cannot express: End must
@@ -25,7 +25,7 @@ type Event struct {
 	End   int      `json:"end,omitempty"`
 }
 
-func (e *Event) ValidateWith(ctx context.Context, v mg.StructValidator) error {
+func (e *Event) ValidateWith(ctx context.Context, v dg.StructValidator) error {
 	// Run any tag-based validation the client was configured with.
 	if v != nil {
 		if err := v.StructCtx(ctx, e); err != nil {
@@ -42,7 +42,7 @@ func (e *Event) ValidateWith(ctx context.Context, v mg.StructValidator) error {
 // ExampleSelfValidator inserts an Event; the client routes it through
 // ValidateWith, so the cross-field rule runs before the write.
 func ExampleSelfValidator() {
-	client, _ := mg.NewClient("dgraph://localhost:9080")
+	client, _ := dg.NewClient("dgraph://localhost:9080")
 	defer client.Close()
 
 	ctx := context.Background()

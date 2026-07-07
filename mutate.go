@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	dg "github.com/dolan-in/dgman/v2"
+	"github.com/dolan-in/dgman/v2"
 )
 
 // parseNamespaceID parses a namespace string to uint64
@@ -58,7 +58,7 @@ func checkObject(obj any) (any, error) {
 
 func (c client) process(ctx context.Context,
 	obj any, operation string,
-	txFunc func(*dg.TxnContext, any) ([]string, error)) error {
+	txFunc func(*dgman.TxnContext, any) ([]string, error)) error {
 
 	schemaObj, err := checkObject(obj)
 	if err != nil {
@@ -100,15 +100,15 @@ func (c client) process(ctx context.Context,
 	provider := c.options.embeddingProvider
 	hasEmbedding := provider != nil && hasSimStringFields(obj)
 
-	var tx *dg.TxnContext
+	var tx *dgman.TxnContext
 	if hasEmbedding {
 		// Do not use SetCommitNow: we need to inject shadow vectors before committing.
-		tx = dg.NewTxnContext(ctx, client)
+		tx = dgman.NewTxnContext(ctx, client)
 		// Discard is a no-op after a successful Commit but ensures resources are
 		// cleaned up on all paths (error returns, panics, etc.).
 		defer func() { _ = tx.Txn().Discard(ctx) }()
 	} else {
-		tx = dg.NewTxnContext(ctx, client).SetCommitNow()
+		tx = dgman.NewTxnContext(ctx, client).SetCommitNow()
 	}
 
 	uids, err := txFunc(tx, obj)

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	dg "github.com/dolan-in/dgman/v2"
+	"github.com/dolan-in/dgman/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -252,9 +252,9 @@ func TestClientQuery(t *testing.T) {
 }
 
 type TestItem struct {
-	Name        string            `json:"name,omitempty" dgraph:"index=term"`
-	Description string            `json:"description,omitempty"`
-	Vector      *dg.VectorFloat32 `json:"vector,omitempty" dgraph:"index=hnsw(metric:\"cosine\")"`
+	Name        string               `json:"name,omitempty" dgraph:"index=term"`
+	Description string               `json:"description,omitempty"`
+	Vector      *dgman.VectorFloat32 `json:"vector,omitempty" dgraph:"index=hnsw(metric:\"cosine\")"`
 
 	UID   string   `json:"uid,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`
@@ -294,17 +294,17 @@ func TestVectorSimilaritySearch(t *testing.T) {
 				{
 					Name:        "Item A",
 					Description: "First vector",
-					Vector:      &dg.VectorFloat32{Values: []float32{0.1, 0.2, 0.3, 0.4, 0.5}},
+					Vector:      &dgman.VectorFloat32{Values: []float32{0.1, 0.2, 0.3, 0.4, 0.5}},
 				},
 				{
 					Name:        "Item B",
 					Description: "Second vector",
-					Vector:      &dg.VectorFloat32{Values: []float32{0.5, 0.4, 0.3, 0.2, 0.1}},
+					Vector:      &dgman.VectorFloat32{Values: []float32{0.5, 0.4, 0.3, 0.2, 0.1}},
 				},
 				{
 					Name:        "Item C",
 					Description: "Third vector",
-					Vector:      &dg.VectorFloat32{Values: []float32{1.0, 1.0, 1.0, 1.0, 1.0}},
+					Vector:      &dgman.VectorFloat32{Values: []float32{1.0, 1.0, 1.0, 1.0, 1.0}},
 				},
 			}
 
@@ -314,12 +314,12 @@ func TestVectorSimilaritySearch(t *testing.T) {
 
 			var testItem TestItem
 			vectorVar := "[0.51, 0.39, 0.29, 0.19, 0.09]"
-			query := dg.NewQuery().Model(&testItem).RootFunc("similar_to(vector, 1, $vec)")
+			query := dgman.NewQuery().Model(&testItem).RootFunc("similar_to(vector, 1, $vec)")
 
 			dgo, cleanup, err := client.DgraphClient()
 			require.NoError(t, err)
 			defer cleanup()
-			tx := dg.NewReadOnlyTxn(dgo)
+			tx := dgman.NewReadOnlyTxn(dgo)
 			err = tx.Query(query).Vars("similar_to($vec: string)", map[string]string{"$vec": vectorVar}).Scan()
 			require.NoError(t, err)
 
@@ -409,7 +409,7 @@ func TestReverseEdgeQuery(t *testing.T) {
 			// querying uses the `expand(_all_)` operator, which does not
 			// support reverse edges.
 			var result []Class
-			query := dg.NewQuery().Model(&result).Query(`
+			query := dgman.NewQuery().Model(&result).Query(`
 			{
 				expand(_all_)
 				~takes_class {
@@ -419,7 +419,7 @@ func TestReverseEdgeQuery(t *testing.T) {
 			dgo, cleanup, err := client.DgraphClient()
 			require.NoError(t, err)
 			defer cleanup()
-			tx := dg.NewReadOnlyTxn(dgo)
+			tx := dgman.NewReadOnlyTxn(dgo)
 			err = tx.Query(query).Scan()
 			require.NoError(t, err)
 

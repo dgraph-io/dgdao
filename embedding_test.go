@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	mg "github.com/dgraph-io/dgdao"
-	dg "github.com/dolan-in/dgman/v2"
+	dg "github.com/dgraph-io/dgdao"
+	"github.com/dolan-in/dgman/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,7 +59,7 @@ func (m *mockEmbeddingProvider) Dims() int { return m.dims }
 // embeddableProduct is the test struct using SimString.
 type embeddableProduct struct {
 	Name        string       `json:"name,omitempty" dgraph:"index=term"`
-	Description mg.SimString `json:"description,omitempty" dgraph:"embedding,index=term"`
+	Description dg.SimString `json:"description,omitempty" dgraph:"embedding,index=term"`
 
 	UID   string   `json:"uid,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`
@@ -68,7 +68,7 @@ type embeddableProduct struct {
 // embeddableCustomMetric tests overriding metric and exponent.
 type embeddableCustomMetric struct {
 	Name        string       `json:"name,omitempty" dgraph:"index=term"`
-	Description mg.SimString `json:"description,omitempty" dgraph:"embedding,metric=euclidean,exponent=5"`
+	Description dg.SimString `json:"description,omitempty" dgraph:"embedding,metric=euclidean,exponent=5"`
 
 	UID   string   `json:"uid,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`
@@ -78,26 +78,26 @@ type embeddableCustomMetric struct {
 // Descriptions shorter than 20 runes should not be embedded.
 type embeddableWithThreshold struct {
 	Name        string       `json:"name,omitempty" dgraph:"index=term"`
-	Description mg.SimString `json:"description,omitempty" dgraph:"embedding,threshold=20"`
+	Description dg.SimString `json:"description,omitempty" dgraph:"embedding,threshold=20"`
 
 	UID   string   `json:"uid,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`
 }
 
 // createEmbeddingClient creates a test client with the given mock embedding provider.
-func createEmbeddingClient(t *testing.T, provider mg.EmbeddingProvider) (mg.Client, func()) {
+func createEmbeddingClient(t *testing.T, provider dg.EmbeddingProvider) (dg.Client, func()) {
 	t.Helper()
 	uri := "file://" + GetTempDir(t)
-	client, err := mg.NewClient(uri,
-		mg.WithAutoSchema(true),
-		mg.WithEmbeddingProvider(provider),
+	client, err := dg.NewClient(uri,
+		dg.WithAutoSchema(true),
+		dg.WithEmbeddingProvider(provider),
 	)
 	require.NoError(t, err)
 
 	cleanup := func() {
 		_ = client.DropAll(context.Background())
 		client.Close()
-		mg.Shutdown()
+		dg.Shutdown()
 	}
 	return client, cleanup
 }
@@ -105,16 +105,16 @@ func createEmbeddingClient(t *testing.T, provider mg.EmbeddingProvider) (mg.Clie
 // --- Unit tests ---
 
 func TestSimStringMarshal(t *testing.T) {
-	s := mg.SimString("hello world")
+	s := dg.SimString("hello world")
 	b, err := s.MarshalJSON()
 	require.NoError(t, err)
 	require.Equal(t, `"hello world"`, string(b))
 }
 
 func TestSimStringUnmarshal(t *testing.T) {
-	var s mg.SimString
+	var s dg.SimString
 	require.NoError(t, s.UnmarshalJSON([]byte(`"hello world"`)))
-	require.Equal(t, mg.SimString("hello world"), s)
+	require.Equal(t, dg.SimString("hello world"), s)
 }
 
 func TestHasEmbeddingTagDetection(t *testing.T) {
@@ -236,8 +236,8 @@ func TestPartialUpdatePreservesShadowVector(t *testing.T) {
 		require.NoError(t, err)
 		defer cleanupDgo()
 		var result embeddableProduct
-		tx := dg.NewReadOnlyTxn(dgoClient)
-		err = mg.SimilarTo(tx, &result, "description", origVec, 1).Scan()
+		tx := dgman.NewReadOnlyTxn(dgoClient)
+		err = dg.SimilarTo(tx, &result, "description", origVec, 1).Scan()
 		require.NoError(t, err)
 		return result.UID
 	}
@@ -286,12 +286,12 @@ func TestSimilarToQuery(t *testing.T) {
 	for i, v := range group1 {
 		name := fmt.Sprintf("Group1-%d", i+1)
 		provider.register(name, v)
-		products = append(products, &embeddableProduct{Name: name, Description: mg.SimString(name)})
+		products = append(products, &embeddableProduct{Name: name, Description: dg.SimString(name)})
 	}
 	for i, v := range group2 {
 		name := fmt.Sprintf("Group2-%d", i+1)
 		provider.register(name, v)
-		products = append(products, &embeddableProduct{Name: name, Description: mg.SimString(name)})
+		products = append(products, &embeddableProduct{Name: name, Description: dg.SimString(name)})
 	}
 
 	client, cleanup := createEmbeddingClient(t, provider)
@@ -308,8 +308,8 @@ func TestSimilarToQuery(t *testing.T) {
 	defer cleanupDgo()
 
 	var result embeddableProduct
-	tx := dg.NewReadOnlyTxn(dgoClient)
-	err = mg.SimilarTo(tx, &result, "description", queryVec, 1).Scan()
+	tx := dgman.NewReadOnlyTxn(dgoClient)
+	err = dg.SimilarTo(tx, &result, "description", queryVec, 1).Scan()
 	require.NoError(t, err)
 
 	require.NotEmpty(t, result.Name, "Should find a matching product")
@@ -342,7 +342,7 @@ func TestSimilarToTextQuery(t *testing.T) {
 
 	// SimilarToText should embed "fruit like apple" → vecQueryFruit → nearest is Apple Product
 	var result embeddableProduct
-	err := mg.SimilarToText(client, ctx, &result, "description", "fruit like apple", 1)
+	err := dg.SimilarToText(client, ctx, &result, "description", "fruit like apple", 1)
 	require.NoError(t, err, "SimilarToText should not error")
 	require.Equal(t, "Apple Product", result.Name)
 }
@@ -387,12 +387,12 @@ func TestCustomMetricEmbedding(t *testing.T) {
 func TestNoProviderNoEmbedding(t *testing.T) {
 	// Client without embedding provider: Insert should still work normally for SimString fields
 	uri := "file://" + GetTempDir(t)
-	client, err := mg.NewClient(uri, mg.WithAutoSchema(true))
+	client, err := dg.NewClient(uri, dg.WithAutoSchema(true))
 	require.NoError(t, err)
 	defer func() {
 		_ = client.DropAll(context.Background())
 		client.Close()
-		mg.Shutdown()
+		dg.Shutdown()
 	}()
 
 	ctx := context.Background()
@@ -474,9 +474,9 @@ func TestThresholdEmbedding(t *testing.T) {
 	defer cleanupDgo()
 
 	queryVec := []float32{1.0, 0.0, 0.0, 0.0}
-	tx := dg.NewReadOnlyTxn(dgoClient)
+	tx := dgman.NewReadOnlyTxn(dgoClient)
 	var result embeddableWithThreshold
-	err = mg.SimilarTo(tx, &result, "description", queryVec, 1).Scan()
+	err = dg.SimilarTo(tx, &result, "description", queryVec, 1).Scan()
 	// Either no results (empty UID) or the short item (which was never embedded) —
 	// the long item's cleared vector should not be the top match.
 	require.NoError(t, err)
@@ -516,14 +516,14 @@ func skipUnlessOllama(t *testing.T) {
 type sportingGoodsProduct struct {
 	Name        string       `json:"name,omitempty" dgraph:"index=term"`
 	Category    string       `json:"category,omitempty" dgraph:"index=term"`
-	Description mg.SimString `json:"description,omitempty" dgraph:"embedding,index=term"`
+	Description dg.SimString `json:"description,omitempty" dgraph:"embedding,index=term"`
 
 	UID   string   `json:"uid,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`
 }
 
-func newOllamaProvider() *mg.OpenAICompatibleProvider {
-	return mg.NewOpenAICompatibleProvider(mg.OpenAICompatibleConfig{
+func newOllamaProvider() *dg.OpenAICompatibleProvider {
+	return dg.NewOpenAICompatibleProvider(dg.OpenAICompatibleConfig{
 		BaseURL: ollamaBaseURL,
 		Model:   ollamaModel,
 		Dims:    ollamaDims,
@@ -537,15 +537,15 @@ func TestOllamaIntegration(t *testing.T) {
 
 	provider := newOllamaProvider()
 	uri := "file://" + GetTempDir(t)
-	client, err := mg.NewClient(uri,
-		mg.WithAutoSchema(true),
-		mg.WithEmbeddingProvider(provider),
+	client, err := dg.NewClient(uri,
+		dg.WithAutoSchema(true),
+		dg.WithEmbeddingProvider(provider),
 	)
 	require.NoError(t, err)
 	defer func() {
 		_ = client.DropAll(context.Background())
 		client.Close()
-		mg.Shutdown()
+		dg.Shutdown()
 	}()
 
 	ctx := context.Background()
@@ -608,7 +608,7 @@ func TestOllamaIntegration(t *testing.T) {
 
 	// 3. SimilarToText: query for running shoes
 	var shoeResult sportingGoodsProduct
-	err = mg.SimilarToText(client, ctx, &shoeResult, "description", "running shoes for trails", 1)
+	err = dg.SimilarToText(client, ctx, &shoeResult, "description", "running shoes for trails", 1)
 	require.NoError(t, err)
 	t.Logf("Running shoe query → %q (%s)", shoeResult.Name, shoeResult.Description)
 	require.NotEmpty(t, shoeResult.Name, "Should find a product")
@@ -617,7 +617,7 @@ func TestOllamaIntegration(t *testing.T) {
 
 	// 4. SimilarToText: query for waterproof outerwear
 	var jacketResult sportingGoodsProduct
-	err = mg.SimilarToText(client, ctx, &jacketResult, "description", "waterproof jacket for bad weather", 1)
+	err = dg.SimilarToText(client, ctx, &jacketResult, "description", "waterproof jacket for bad weather", 1)
 	require.NoError(t, err)
 	t.Logf("Jacket query → %q (%s)", jacketResult.Name, jacketResult.Description)
 	require.NotEmpty(t, jacketResult.Name)
@@ -632,7 +632,7 @@ func TestOllamaIntegration(t *testing.T) {
 
 	// Re-query with the updated semantics — still expects a trail running shoe
 	var updatedResult sportingGoodsProduct
-	err = mg.SimilarToText(client, ctx, &updatedResult, "description", "waterproof trail shoe for mud", 1)
+	err = dg.SimilarToText(client, ctx, &updatedResult, "description", "waterproof trail shoe for mud", 1)
 	require.NoError(t, err)
 	t.Logf("After update query → %q", updatedResult.Name)
 	require.NotEmpty(t, updatedResult.Name)
@@ -645,7 +645,7 @@ func TestOllamaIntegration(t *testing.T) {
 
 	// ── 7. SimilarToText: confirm marathon query still maps to road shoe ───────
 	var marathonResult sportingGoodsProduct
-	err = mg.SimilarToText(client, ctx, &marathonResult, "description", "shoe for running a marathon", 1)
+	err = dg.SimilarToText(client, ctx, &marathonResult, "description", "shoe for running a marathon", 1)
 	require.NoError(t, err)
 	t.Logf("Marathon query → %q", marathonResult.Name)
 	require.NotEmpty(t, marathonResult.Name)

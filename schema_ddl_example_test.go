@@ -8,7 +8,7 @@ package dgdao_test
 import (
 	"context"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 )
 
 // ExampleClient_AlterSchema applies a raw DQL schema string directly, giving
@@ -16,7 +16,7 @@ import (
 // UpdateSchema (which infers the schema from Go struct tags) and is useful for
 // migrations that declare predicates no Go type models yet.
 func ExampleClient_AlterSchema() {
-	client, _ := mg.NewClient("dgraph://localhost:9080")
+	client, _ := dg.NewClient("dgraph://localhost:9080")
 	defer client.Close()
 
 	ctx := context.Background()

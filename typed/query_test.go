@@ -13,7 +13,7 @@ import (
 
 	"github.com/dgraph-io/dgdao"
 	"github.com/dgraph-io/dgdao/typed"
-	dg "github.com/dolan-in/dgman/v2"
+	"github.com/dolan-in/dgman/v2"
 	"github.com/go-logr/logr/funcr"
 )
 
@@ -159,7 +159,7 @@ func TestQuery_BuilderChainCompilesAndRuns(t *testing.T) {
 func TestQuery_RawExposesUnderlyingBuilder(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 	if c.Query(context.Background()).Raw() == nil {
-		t.Fatal("Raw() returned nil; expected the underlying *dg.Query")
+		t.Fatal("Raw() returned nil; expected the underlying *dgman.Query")
 	}
 }
 
@@ -606,9 +606,9 @@ func TestQuery_RawRoundTrips(t *testing.T) {
 		t.Fatalf("Add: %v", err)
 	}
 
-	// Take the raw *dg.Query, apply a dgman-only builder method directly,
+	// Take the raw *dgman.Query, apply a dgman-only builder method directly,
 	// then execute via the raw query's own Nodes(&dst).
-	var raw *dg.Query = c.Query(ctx).Raw()
+	var raw *dgman.Query = c.Query(ctx).Raw()
 	raw.OrderAsc("qty")
 
 	var dst []widget
@@ -1061,8 +1061,8 @@ func TestRawQuery_RawExposesUnderlyingQuery(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
 	rq := c.Query(ctx).Var()
-	// Raw returns the underlying *dg.Query; String mirrors Raw().String().
-	var raw *dg.Query = rq.Raw()
+	// Raw returns the underlying *dgman.Query; String mirrors Raw().String().
+	var raw *dgman.Query = rq.Raw()
 	if raw == nil {
 		t.Fatal("RawQuery.Raw() returned nil")
 	}
@@ -1090,7 +1090,7 @@ func TestRawQuery_CarriesEarlierBuilders(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
 	// Builders applied on *Query[T] before the GroupBy transition survive
-	// into the *RawQuery — the two share one underlying *dg.Query.
+	// into the *RawQuery — the two share one underlying *dgman.Query.
 	s := c.Query(ctx).Filter(`eq(name, "z")`).GroupBy("name").String()
 	if !strings.Contains(s, `eq(name, "z")`) {
 		t.Fatalf("Filter set before GroupBy did not survive the transition; got:\n%s", s)
