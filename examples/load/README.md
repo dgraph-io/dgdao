@@ -54,7 +54,7 @@ the same directory:
 
 ```go
 // Initialize dgdao client with the same directory
-client, err := mg.NewClient("file:///path/to/data/directory")
+client, err := dg.NewClient("file:///path/to/data/directory")
 if err != nil {
     // handle error
 }

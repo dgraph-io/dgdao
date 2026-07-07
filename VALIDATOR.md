@@ -20,14 +20,14 @@ type StructValidator interface {
 ```go
 import (
     "github.com/go-playground/validator/v10"
-    mg "github.com/dgraph-io/dgdao"
+    dg "github.com/dgraph-io/dgdao"
 )
 
 // Create a validator instance (implements StructValidator)
 validate := validator.New()
 
 // Create a client with validator
-client, err := mg.NewClient("file:///path/to/db", mg.WithValidator(validate))
+client, err := dg.NewClient("file:///path/to/db", dg.WithValidator(validate))
 if err != nil {
     log.Fatal(err)
 }
@@ -38,7 +38,7 @@ defer client.Close()
 
 ```go
 // NewValidator() returns a *validator.Validate with default settings
-client, err := mg.NewClient("file:///path/to/db", mg.WithValidator(mg.NewValidator()))
+client, err := dg.NewClient("file:///path/to/db", dg.WithValidator(dg.NewValidator()))
 ```
 
 ### Custom Validator Implementation
@@ -53,7 +53,7 @@ func (v *MyValidator) StructCtx(ctx context.Context, s interface{}) error {
     return nil
 }
 
-client, err := mg.NewClient("file:///path/to/db", mg.WithValidator(&MyValidator{}))
+client, err := dg.NewClient("file:///path/to/db", dg.WithValidator(&MyValidator{}))
 ```
 
 ### Struct Validation Tags
@@ -119,7 +119,7 @@ If you don't want validation, simply don't provide a validator:
 
 ```go
 // No validation will be performed
-client, err := mg.NewClient("file:///path/to/db")
+client, err := dg.NewClient("file:///path/to/db")
 ```
 
 ## Error Handling
