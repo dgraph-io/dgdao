@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/dgraph-io/dgdao"
-	dg "github.com/dolan-in/dgman/v2"
+	"github.com/dolan-in/dgman/v2"
 )
 
 // MultiQuery batches N homogeneous-type Query[T] blocks into a single
@@ -87,7 +87,7 @@ func (mq *MultiQuery[T]) Execute(ctx context.Context) (map[string][]T, error) {
 		return map[string][]T{}, nil
 	}
 
-	rawBlocks := make([]*dg.Query, 0, len(mq.names))
+	rawBlocks := make([]*dgman.Query, 0, len(mq.names))
 	for _, name := range mq.names {
 		block := mq.blocks[name]
 		if len(block.edges) != 0 {
@@ -101,7 +101,7 @@ func (mq *MultiQuery[T]) Execute(ctx context.Context) (map[string][]T, error) {
 		rawBlocks = append(rawBlocks, block.q)
 	}
 
-	dql := dg.NewQueryBlock(rawBlocks...).String()
+	dql := dgman.NewQueryBlock(rawBlocks...).String()
 	raw, err := mq.conn.QueryRaw(ctx, dql, nil)
 	if err != nil {
 		return nil, fmt.Errorf("multi_query: dgraph: %w", err)

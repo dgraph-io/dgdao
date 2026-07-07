@@ -9,7 +9,7 @@ import (
 	"context"
 	"testing"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,7 +29,7 @@ type lockLikeNode struct {
 // does not contain type lockLikeNode" even though the schema held the (correctly
 // named) "type DTypeMismatchType".
 func TestMutateValidation_ResolvesDTypeName(t *testing.T) {
-	client, err := mg.NewClient("file://" + GetTempDir(t)) // autoSchema disabled by default
+	client, err := dg.NewClient("file://" + GetTempDir(t)) // autoSchema disabled by default
 	require.NoError(t, err)
 	defer client.Close()
 

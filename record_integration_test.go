@@ -9,11 +9,11 @@ import (
 	"context"
 	"testing"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 	"github.com/stretchr/testify/require"
 )
 
-// studioRecord is a schema-defining record (implements mg.Schema). studioWrapper
+// studioRecord is a schema-defining record (implements dg.Schema). studioWrapper
 // wraps it and exposes Unwrap, exactly as a dgdao-gen wrapper would.
 type studioRecord struct {
 	UID   string   `json:"uid,omitempty"`
@@ -33,7 +33,7 @@ func (w *studioWrapper) Unwrap() *studioRecord { return w.inner }
 // dgraph fields of its own) would not persist Name and the inner UID would stay
 // empty — so this test fails on that regression.
 func TestClientUnwrapsWrapperThroughRealMutation(t *testing.T) {
-	client, err := mg.NewClient("file://"+GetTempDir(t), mg.WithAutoSchema(true))
+	client, err := dg.NewClient("file://"+GetTempDir(t), dg.WithAutoSchema(true))
 	require.NoError(t, err)
 	defer client.Close()
 
@@ -56,7 +56,7 @@ func TestClientUnwrapsWrapperThroughRealMutation(t *testing.T) {
 // reflected over the wrappers and failed with "cannot set uid/", persisting
 // nothing; now each inner record is inserted and receives a UID.
 func TestClientUnwrapsWrapperSliceThroughRealMutation(t *testing.T) {
-	client, err := mg.NewClient("file://"+GetTempDir(t), mg.WithAutoSchema(true))
+	client, err := dg.NewClient("file://"+GetTempDir(t), dg.WithAutoSchema(true))
 	require.NoError(t, err)
 	defer client.Close()
 

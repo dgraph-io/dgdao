@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/dgraph-io/dgdao"
-	dg "github.com/dolan-in/dgman/v2"
+	"github.com/dolan-in/dgman/v2"
 )
 
 // TestRemapPredicateKeys_SurfacesMalformedBlock guards the swallowed-error fix:
@@ -60,7 +60,7 @@ func TestEdgeBlocksRenderServerSideVar(t *testing.T) {
 		Filter(`eq(name, "Alice")`).
 		WhereEdge("pets", `eq(name, "Fido")`)
 
-	dql := dg.NewQueryBlock(qb.edgeBlocks(true)...).String()
+	dql := dgman.NewQueryBlock(qb.edgeBlocks(true)...).String()
 
 	for _, want := range []string{
 		"mgMatched as var(", // matched roots bound server-side

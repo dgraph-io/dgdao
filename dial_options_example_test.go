@@ -8,7 +8,7 @@ package dgdao_test
 import (
 	"time"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -20,10 +20,10 @@ import (
 // grpc.DialOption; they compose with WithMaxRecvMsgSize. The options are ignored
 // for embedded (file://) URIs.
 func ExampleWithGRPCDialOption() {
-	client, err := mg.NewClient(
+	client, err := dg.NewClient(
 		"dgraph://localhost:9080",
-		mg.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
-		mg.WithGRPCDialOption(grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		dg.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+		dg.WithGRPCDialOption(grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:    30 * time.Second,
 			Timeout: 10 * time.Second,
 		})),

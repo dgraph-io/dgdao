@@ -50,7 +50,7 @@ func main() {
 
 	// Initialize standard logger with stdr
 	stdLogger := log.New(os.Stdout, "", log.LstdFlags)
-	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("mg")
+	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("dg")
 
 	// Set verbosity level based on flag
 	stdr.SetVerbosity(*verbosityFlag)

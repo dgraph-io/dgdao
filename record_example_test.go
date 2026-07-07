@@ -9,10 +9,10 @@ import (
 	"context"
 	"fmt"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 )
 
-// Actor is a schema-defining record. Implementing mg.Schema (a single
+// Actor is a schema-defining record. Implementing dg.Schema (a single
 // SchemaTypeName method) marks it as a generated schema type; code generators
 // such as dgdao-gen emit this method.
 type Actor struct {
@@ -35,7 +35,7 @@ func (b *ActorBuilder) Unwrap() *Actor { return b.actor }
 // to its Actor before persisting, so generated wrapper types work transparently
 // while plain structs are unaffected.
 func ExampleSchema() {
-	client, _ := mg.NewClient("dgraph://localhost:9080")
+	client, _ := dg.NewClient("dgraph://localhost:9080")
 	defer client.Close()
 
 	ctx := context.Background()

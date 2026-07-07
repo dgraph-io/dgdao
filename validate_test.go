@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 )
 
 // ValidatableUser is a test struct with validation tags
@@ -71,7 +71,7 @@ func TestClientWithValidator(t *testing.T) {
 			require.NoError(t, err)
 
 			// Create client with validator
-			client, err := mg.NewClient(tc.uri, mg.WithAutoSchema(true), mg.WithValidator(validate))
+			client, err := dg.NewClient(tc.uri, dg.WithAutoSchema(true), dg.WithValidator(validate))
 			require.NoError(t, err)
 			defer client.Close()
 
@@ -194,7 +194,7 @@ func TestClientWithValidator(t *testing.T) {
 func TestValidatorWithoutAutoSchema(t *testing.T) {
 	// Test validator behavior when AutoSchema is disabled
 	validate := validator.New()
-	client, err := mg.NewClient("file://"+GetTempDir(t), mg.WithValidator(validate))
+	client, err := dg.NewClient("file://"+GetTempDir(t), dg.WithValidator(validate))
 	require.NoError(t, err)
 	defer client.Close()
 

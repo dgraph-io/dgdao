@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	mg "github.com/dgraph-io/dgdao"
+	dg "github.com/dgraph-io/dgdao"
 )
 
 // Token is keyed by a unique jti predicate. The upsert+unique tags let
@@ -28,7 +28,7 @@ type Token struct {
 // This is the building block for "claim a one-time token": the first caller
 // stores and proceeds, every later caller sees loaded=true and is rejected.
 func ExampleClient_LoadOrStore() {
-	client, _ := mg.NewClient("dgraph://localhost:9080")
+	client, _ := dg.NewClient("dgraph://localhost:9080")
 	defer client.Close()
 
 	ctx := context.Background()
@@ -44,7 +44,7 @@ func ExampleClient_LoadOrStore() {
 // record hydrated, the rest get loaded=false. Use it to consume a one-shot
 // value — a nonce, a pending job, a single-use code.
 func ExampleClient_LoadAndDelete() {
-	client, _ := mg.NewClient("dgraph://localhost:9080")
+	client, _ := dg.NewClient("dgraph://localhost:9080")
 	defer client.Close()
 
 	ctx := context.Background()

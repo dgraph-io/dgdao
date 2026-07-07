@@ -9,12 +9,12 @@ import (
 	"regexp"
 	"strings"
 
-	dg "github.com/dolan-in/dgman/v2"
+	"github.com/dolan-in/dgman/v2"
 )
 
 // UniqueError represents an error that occurs when attempting to insert or update
 // a node that would violate a unique constraint.
-type UniqueError = dg.UniqueError
+type UniqueError = dgman.UniqueError
 
 // parseUniqueError attempts to parse a Dgraph unique constraint violation error
 // and convert it to a UniqueError. Returns nil if the error is not a unique constraint violation.

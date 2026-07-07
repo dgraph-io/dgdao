@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"github.com/dgraph-io/dgo/v250/protos/api"
-	dg "github.com/dolan-in/dgman/v2"
+	"github.com/dolan-in/dgman/v2"
 )
 
 // SimString is a string type that participates in automatic vector similarity search.
@@ -325,7 +325,7 @@ func vectorToBytes(vec []float32) []byte {
 // caller can commit the whole transaction atomically.
 func injectShadowVectors(ctx context.Context,
 	provider EmbeddingProvider,
-	tx *dg.TxnContext,
+	tx *dgman.TxnContext,
 	obj any,
 	uids []string) error {
 	val := reflect.ValueOf(obj)
@@ -457,12 +457,12 @@ func injectShadowVectors(ctx context.Context,
 //
 //	vec := []float32{0.1, 0.2, 0.3}
 //	dgoClient, cleanup, _ := client.DgraphClient(); defer cleanup()
-//	tx := dg.NewReadOnlyTxn(dgoClient)
+//	tx := dgman.NewReadOnlyTxn(dgoClient)
 //	err := SimilarTo(tx, &result, "description", vec, 5).Scan()
-func SimilarTo(tx *dg.TxnContext, model any, field string, vec []float32, k int) *dg.QueryBlock {
+func SimilarTo(tx *dgman.TxnContext, model any, field string, vec []float32, k int) *dgman.QueryBlock {
 	vecStr := vectorToQueryString(vec)
 	rootFunc := fmt.Sprintf("similar_to(%s, %d, $vec)", vecShadowPredicate(field), k)
-	q := dg.NewQuery().Model(model).RootFunc(rootFunc)
+	q := dgman.NewQuery().Model(model).RootFunc(rootFunc)
 	return tx.Query(q).Vars("similar_to($vec: string)", map[string]string{"$vec": vecStr})
 }
 
@@ -501,8 +501,8 @@ func SimilarToText(c Client, ctx context.Context, model any, field string, text 
 	}
 	defer cleanup()
 
-	tx := dg.NewReadOnlyTxn(dgoClient)
-	q := dg.NewQuery().Model(model).RootFunc(rootFunc)
+	tx := dgman.NewReadOnlyTxn(dgoClient)
+	q := dgman.NewQuery().Model(model).RootFunc(rootFunc)
 	return tx.Query(q).Vars("similar_to($vec: string)", map[string]string{"$vec": vecStr}).Scan()
 }
 

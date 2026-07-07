@@ -32,7 +32,7 @@ func main() {
 
 	// Initialize the stdr logger with the verbosity from -v
 	stdLogger := log.New(os.Stdout, "", log.LstdFlags)
-	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("mg")
+	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("dg")
 	vFlag := flag.Lookup("v")
 	if vFlag != nil {
 		val, err := strconv.Atoi(vFlag.Value.String())
