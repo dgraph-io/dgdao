@@ -26,7 +26,7 @@ import (
 func CreateTestClient(t *testing.T, uri string) (dg.Client, func()) {
 
 	stdLogger := log.New(os.Stdout, "", log.LstdFlags)
-	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("mg")
+	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("dg")
 	verbosity := os.Getenv("DGDAO_TEST_LOG_LEVEL")
 	if verbosity == "" {
 		stdr.SetVerbosity(0)

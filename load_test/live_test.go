@@ -91,7 +91,7 @@ func TestLiveLoader1Million(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 	stdLogger := log.New(os.Stdout, "", log.LstdFlags)
-	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("mg")
+	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("dg")
 	conf := dgdao.NewDefaultConfig(t.TempDir()).WithLogger(logger).WithCacheSizeMB(0)
 	engine, err := dgdao.NewEngine(conf)
 	require.NoError(t, err)

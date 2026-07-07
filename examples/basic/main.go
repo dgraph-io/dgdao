@@ -89,7 +89,7 @@ func main() {
 
 	// Initialize standard logger with stdr
 	stdLogger := log.New(os.Stdout, "", log.LstdFlags)
-	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("mg")
+	logger := stdr.NewWithOptions(stdLogger, stdr.Options{LogCaller: stdr.All}).WithName("dg")
 	vFlag := flag.Lookup("v")
 	if vFlag != nil {
 		val, err := strconv.Atoi(vFlag.Value.String())
