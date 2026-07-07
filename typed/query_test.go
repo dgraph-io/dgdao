@@ -13,7 +13,6 @@ import (
 
 	"github.com/dgraph-io/dgdao"
 	"github.com/dgraph-io/dgdao/typed"
-	"github.com/dolan-in/dgman/v2"
 	"github.com/go-logr/logr/funcr"
 )
 
@@ -608,7 +607,7 @@ func TestQuery_RawRoundTrips(t *testing.T) {
 
 	// Take the raw *dgman.Query, apply a dgman-only builder method directly,
 	// then execute via the raw query's own Nodes(&dst).
-	var raw *dgman.Query = c.Query(ctx).Raw()
+	raw := c.Query(ctx).Raw()
 	raw.OrderAsc("qty")
 
 	var dst []widget
@@ -1062,7 +1061,7 @@ func TestRawQuery_RawExposesUnderlyingQuery(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 	rq := c.Query(ctx).Var()
 	// Raw returns the underlying *dgman.Query; String mirrors Raw().String().
-	var raw *dgman.Query = rq.Raw()
+	raw := rq.Raw()
 	if raw == nil {
 		t.Fatal("RawQuery.Raw() returned nil")
 	}
