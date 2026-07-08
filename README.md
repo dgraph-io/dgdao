@@ -1011,6 +1011,44 @@ explore the package. These are organized in the `cmd` and `examples` folders:
 You can use these tools as starting points for your own applications or as references for
 integrating dgdao into your workflow.
 
+## Extensions
+
+dgdao has companion projects under the `dgraph-io` organization that extend it with code generation,
+schema migrations, and observability. Each is an independent Go module you can adopt on its own.
+
+### dgdao-gen
+
+Code generator and wrapper-entity runtime. Define your Go structs, run `go generate`, and get a
+fully typed client, query builders, and auto-paging iterators derived from your schema. See
+[github.com/dgraph-io/dgdao-gen](https://github.com/dgraph-io/dgdao-gen).
+
+```sh
+go install github.com/dgraph-io/dgdao-gen/cmd/dgdao-gen@latest
+```
+
+Generated code imports `github.com/dgraph-io/dgdao-gen/wrap`.
+
+### dgdao-migrate
+
+Struct-first schema migration framework for Dgraph. Manages your schema lifecycle as an ordered
+chain of run-once migrations (schema and data changes) scaffolded from your Go struct snapshots,
+with an explicit revision chain, resumable phased migrations, checksum-enforced immutability, and
+drift gates. See [github.com/dgraph-io/dgdao-migrate](https://github.com/dgraph-io/dgdao-migrate).
+
+```go
+import "github.com/dgraph-io/dgdao-migrate/migrate"
+```
+
+### dgdao-telemetry
+
+OpenTelemetry instrumentation for the dgdao typed client. Provides the OpenTelemetry implementation
+of the pluggable `typed.Tracer`, emitting a client span per database operation. See
+[github.com/dgraph-io/dgdao-telemetry](https://github.com/dgraph-io/dgdao-telemetry).
+
+```go
+import telemetry "github.com/dgraph-io/dgdao-telemetry"
+```
+
 ## Open Source
 
 We welcome external contributions. See the [CONTRIBUTING.md](./CONTRIBUTING.md) file if you would
