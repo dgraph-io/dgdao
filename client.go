@@ -142,6 +142,15 @@ type SelfValidator interface {
 	ValidateWith(ctx context.Context, v StructValidator) error
 }
 
+// Defaulter lets a model populate default field values before a write.
+// dgdao calls ApplyDefaults on the model in Insert, Upsert, Update, and
+// LoadOrStore, before validation, so a defaulted field can satisfy a
+// validate:"required" rule. Implementations set a field only when it is
+// the zero value, except monotonic fields set on every write.
+type Defaulter interface {
+	ApplyDefaults(ctx context.Context) error
+}
+
 // clientOptions holds configuration options for the client.
 //
 // autoSchema: whether to automatically manage the schema.
@@ -547,6 +556,54 @@ func checkPointer(obj any) error {
 	return nil
 }
 
+// applyDefaults invokes ApplyDefaults on model, or on each element if model
+// is a slice, mirroring how validateStruct walks a slice for validateOne.
+// It is a no-op for a value that does not implement Defaulter, and for a
+// nil pointer.
+func (c client) applyDefaults(ctx context.Context, model any) error {
+	val := reflect.ValueOf(model)
+	if val.Kind() == reflect.Pointer {
+		if val.IsNil() {
+			return nil
+		}
+		val = val.Elem()
+	}
+
+	if val.Kind() == reflect.Slice {
+		for i := 0; i < val.Len(); i++ {
+			elem := val.Index(i)
+			if elem.Kind() == reflect.Pointer {
+				if elem.IsNil() {
+					return fmt.Errorf("cannot apply defaults to nil pointer at index %d", i)
+				}
+				elem = elem.Elem()
+			}
+			if err := c.applyDefaultsOne(ctx, elem); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return c.applyDefaultsOne(ctx, val)
+}
+
+// applyDefaultsOne invokes ApplyDefaults on a single value if it (or its
+// address) implements Defaulter, mirroring validateOne's addressable-pointer
+// dispatch so pointer-receiver implementations are found regardless of
+// whether the value is addressable. It is a no-op for a value that does not
+// implement Defaulter.
+func (c client) applyDefaultsOne(ctx context.Context, val reflect.Value) error {
+	iface := val.Interface()
+	if val.CanAddr() {
+		iface = val.Addr().Interface()
+	}
+	if d, ok := iface.(Defaulter); ok {
+		return d.ApplyDefaults(ctx)
+	}
+	return nil
+}
+
 // validateStruct validates a struct using the configured validator.
 //
 // It does NOT early-return when no StructValidator is configured: a value may
@@ -606,6 +663,11 @@ func (c client) validateOne(ctx context.Context, val reflect.Value) error {
 // Passed object must be a pointer to a struct with appropriate dgraph tags.
 func (c client) Insert(ctx context.Context, obj any) error {
 	obj = UnwrapSchema(obj)
+	// Apply defaults before validation, so a defaulted field can satisfy a
+	// validate:"required" rule.
+	if err := c.applyDefaults(ctx, obj); err != nil {
+		return err
+	}
 	// Validate struct before insertion
 	if err := c.validateStruct(ctx, obj); err != nil {
 		return err
@@ -640,6 +702,11 @@ func (c client) InsertRaw(ctx context.Context, obj any) error {
 // will be used.
 func (c client) Upsert(ctx context.Context, obj any, predicates ...string) error {
 	obj = UnwrapSchema(obj)
+	// Apply defaults before validation, so a defaulted field can satisfy a
+	// validate:"required" rule.
+	if err := c.applyDefaults(ctx, obj); err != nil {
+		return err
+	}
 	// Validate struct before upsert
 	if err := c.validateStruct(ctx, obj); err != nil {
 		return err
@@ -662,6 +729,11 @@ func (c client) LoadOrStore(ctx context.Context, obj any, predicates ...string) 
 	// a typed nil or non-pointer would reach MutateOrGet and panic or silently
 	// fail to hydrate on the loaded=true path.
 	if err := checkPointer(obj); err != nil {
+		return false, err
+	}
+	// Apply defaults before validation, so a defaulted field can satisfy a
+	// validate:"required" rule.
+	if err := c.applyDefaults(ctx, obj); err != nil {
 		return false, err
 	}
 	if err := c.validateStruct(ctx, obj); err != nil {
@@ -904,6 +976,11 @@ func isAbortedErr(err error) bool {
 // Passed object must be a pointer to a struct.
 func (c client) Update(ctx context.Context, obj any) error {
 	obj = UnwrapSchema(obj)
+	// Apply defaults before validation, so a defaulted field can satisfy a
+	// validate:"required" rule.
+	if err := c.applyDefaults(ctx, obj); err != nil {
+		return err
+	}
 	// Validate struct before update
 	if err := c.validateStruct(ctx, obj); err != nil {
 		return err
