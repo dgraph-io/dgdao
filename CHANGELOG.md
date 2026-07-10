@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-10 - Version 0.6.0
+
+- feat: add the `Defaulter` interface; dgdao calls `ApplyDefaults(ctx)` on the model before
+  validation in `Insert`, `Upsert`, `Update`, and `LoadOrStore` (not `LoadAndDelete`), so a model
+  can populate default field values — and a defaulted field can satisfy a `validate:"required"`
+  rule. Applies across slices for batch writes. See `DEFAULTER.md`.
+
 ## 2026-07-09 - Version 0.5.4
 
 - chore(deps): pin dgraph/v25 to the released v25.3.8 tag, replacing a pre-release pseudo-version
