@@ -106,6 +106,27 @@ func TestDefaulterAppliesBeforeValidateOnUpdate(t *testing.T) {
 	}
 }
 
+// TestDefaulterAppliesToEachSliceElementOnInsert verifies that Insert of a
+// slice defaults every element, not just a single struct: applyDefaults must
+// mirror validateStruct's slice-walking so batch writes default each element.
+func TestDefaulterAppliesToEachSliceElementOnInsert(t *testing.T) {
+	conn := newDefaulterClient(t)
+	ctx := context.Background()
+
+	entities := []*defaultedEntity{
+		{Key: "slice-insert-1"},
+		{Key: "slice-insert-2"},
+	}
+	if err := conn.Insert(ctx, entities); err != nil {
+		t.Fatalf("Insert: %v", err)
+	}
+	for i, e := range entities {
+		if e.Name != "default-name" {
+			t.Fatalf("entity %d: want Name defaulted to %q, got %q", i, "default-name", e.Name)
+		}
+	}
+}
+
 // plainEntity implements no Defaulter; Insert must remain a no-op for it
 // rather than panicking or erroring when the write-path dispatch finds no
 // Defaulter implementation.

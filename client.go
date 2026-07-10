@@ -556,11 +556,10 @@ func checkPointer(obj any) error {
 	return nil
 }
 
-// applyDefaults invokes ApplyDefaults on model if it (or its address)
-// implements Defaulter, mirroring validateOne's addressable-pointer dispatch
-// so pointer-receiver implementations are found regardless of whether model
-// is passed as a struct value or a pointer. It is a no-op for a value that
-// does not implement Defaulter, and for a nil pointer.
+// applyDefaults invokes ApplyDefaults on model, or on each element if model
+// is a slice, mirroring how validateStruct walks a slice for validateOne.
+// It is a no-op for a value that does not implement Defaulter, and for a
+// nil pointer.
 func (c client) applyDefaults(ctx context.Context, model any) error {
 	val := reflect.ValueOf(model)
 	if val.Kind() == reflect.Pointer {
@@ -569,6 +568,32 @@ func (c client) applyDefaults(ctx context.Context, model any) error {
 		}
 		val = val.Elem()
 	}
+
+	if val.Kind() == reflect.Slice {
+		for i := 0; i < val.Len(); i++ {
+			elem := val.Index(i)
+			if elem.Kind() == reflect.Pointer {
+				if elem.IsNil() {
+					return fmt.Errorf("cannot apply defaults to nil pointer at index %d", i)
+				}
+				elem = elem.Elem()
+			}
+			if err := c.applyDefaultsOne(ctx, elem); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return c.applyDefaultsOne(ctx, val)
+}
+
+// applyDefaultsOne invokes ApplyDefaults on a single value if it (or its
+// address) implements Defaulter, mirroring validateOne's addressable-pointer
+// dispatch so pointer-receiver implementations are found regardless of
+// whether the value is addressable. It is a no-op for a value that does not
+// implement Defaulter.
+func (c client) applyDefaultsOne(ctx context.Context, val reflect.Value) error {
 	iface := val.Interface()
 	if val.CanAddr() {
 		iface = val.Addr().Interface()
