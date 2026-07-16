@@ -133,6 +133,22 @@ update the graph database schema based on the struct tags of objects you insert.
 client, err := dg.NewClient(uri, dg.WithAutoSchema(true))
 ```
 
+#### WithSchemaCache(bool)
+
+Enables or disables caching of the per-write schema check (enabled by default). Every mutation
+performs a schema round-trip before writing: with AutoSchema enabled it re-applies the schema for
+the object's type, and with AutoSchema disabled it fetches the full schema to verify the type
+exists. Since neither outcome changes once it has succeeded, the client caches the result per node
+type and skips the round-trip on subsequent writes — a significant saving for write-heavy workloads.
+`DropAll` invalidates the cache. The trade-off is that schema changes made by other processes are
+not re-detected for types already cached; disable the cache if your writes must observe external
+schema changes on every mutation.
+
+```go
+// Re-check the schema on every write (pre-cache behavior)
+client, err := dg.NewClient(uri, dg.WithSchemaCache(false))
+```
+
 #### WithPoolSize(int)
 
 Sets the size of the connection pool for better performance under load. The default is 10

@@ -162,6 +162,7 @@ type Defaulter interface {
 // embeddingProvider: optional provider for automatic SimString vector embeddings.
 type clientOptions struct {
 	autoSchema        bool
+	schemaCache       bool
 	poolSize          int
 	maxEdgeTraversal  int
 	cacheSizeMB       int
@@ -180,6 +181,24 @@ type ClientOpt func(*clientOptions)
 func WithAutoSchema(enable bool) ClientOpt {
 	return func(o *clientOptions) {
 		o.autoSchema = enable
+	}
+}
+
+// WithSchemaCache enables or disables caching of the per-write schema step
+// (enabled by default). Every mutation performs a schema round-trip before
+// writing: with AutoSchema enabled it re-applies the schema for the object's
+// type, and with AutoSchema disabled it fetches the full schema to verify the
+// type exists. Neither outcome changes once it has succeeded, so the client
+// caches it per node type and skips the round-trip on subsequent writes —
+// a significant saving for write-heavy workloads.
+//
+// The cache is invalidated by DropAll. The trade-off is that schema changes
+// made outside this client (e.g. another process dropping the schema) are not
+// re-detected for types already cached; pass WithSchemaCache(false) if writes
+// must observe external schema changes on every mutation.
+func WithSchemaCache(enable bool) ClientOpt {
+	return func(o *clientOptions) {
+		o.schemaCache = enable
 	}
 }
 
@@ -281,6 +300,7 @@ func NewValidator() *validator.Validate {
 //
 // Optional configuration can be provided via the opts parameter:
 //   - WithAutoSchema(bool) - Enable/disable automatic schema creation for inserted objects
+//   - WithSchemaCache(bool) - Enable/disable caching of the per-write schema check (default on)
 //   - WithPoolSize(int) - Set the connection pool size for better performance under load
 //   - WithMaxEdgeTraversal(int) - Set the maximum number of edges to traverse when fetching an object
 //   - WithNamespace(string) - Set the database namespace for multi-tenant installations
@@ -298,6 +318,7 @@ func NewClient(uri string, opts ...ClientOpt) (Client, error) {
 	// Default options
 	options := clientOptions{
 		autoSchema:       false,
+		schemaCache:      true,
 		poolSize:         10,
 		namespace:        "",
 		maxEdgeTraversal: 10,
@@ -316,10 +337,11 @@ func NewClient(uri string, opts ...ClientOpt) (Client, error) {
 	}
 
 	client := client{
-		uri:       uri,
-		options:   options,
-		logger:    options.logger,
-		consumeMu: &sync.Mutex{},
+		uri:         uri,
+		options:     options,
+		logger:      options.logger,
+		consumeMu:   &sync.Mutex{},
+		schemaCache: newSchemaCheckCache(),
 	}
 
 	clientMapLock.Lock()
@@ -494,6 +516,10 @@ type client struct {
 	// single-winner semantics against the embedded engine, whose commit path
 	// performs no optimistic-concurrency conflict check.
 	consumeMu *sync.Mutex
+	// schemaCache tracks which node types have already passed the per-write
+	// schema sync/verification in process(). Held by pointer for the same
+	// reason as consumeMu: every value copy of this client shares one cache.
+	schemaCache *schemaCheckCache
 }
 
 func (c client) key() string {
@@ -512,7 +538,8 @@ func (c client) key() string {
 	if strings.HasPrefix(c.uri, dgraphURIPrefix) {
 		dialKey = dialOptionsKey(c.options.grpcDialOptions)
 	}
-	return fmt.Sprintf("%s:%t:%d:%d:%d:%d:%s:%s:%s:%s", c.uri, c.options.autoSchema, c.options.poolSize,
+	return fmt.Sprintf("%s:%t:%t:%d:%d:%d:%d:%s:%s:%s:%s", c.uri, c.options.autoSchema,
+		c.options.schemaCache, c.options.poolSize,
 		c.options.maxEdgeTraversal, c.options.cacheSizeMB, c.options.maxRecvMsgSize,
 		c.options.namespace, validatorKey, embeddingKey, dialKey)
 }
@@ -1105,7 +1132,13 @@ func (c client) DropAll(ctx context.Context) error {
 	}
 	defer c.pool.put(client)
 
-	return client.Alter(ctx, &api.Operation{DropAll: true})
+	if err := client.Alter(ctx, &api.Operation{DropAll: true}); err != nil {
+		return err
+	}
+	// The schema is gone; force every type to re-sync or re-verify on its
+	// next write. (DropData keeps the schema, so it does not invalidate.)
+	c.schemaCache.invalidate()
+	return nil
 }
 
 // DropData implements dropping data from the database.

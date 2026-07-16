@@ -65,17 +65,17 @@ func (c client) process(ctx context.Context,
 		return err
 	}
 	if c.options.autoSchema {
-		err := c.UpdateSchema(ctx, schemaObj)
-		if err != nil {
-			return err
+		// A type's generated schema can't change within a process, so once
+		// UpdateSchema has succeeded for it there is nothing left to sync.
+		goType := reflect.TypeOf(schemaObj)
+		if !c.options.schemaCache || !c.schemaCache.isSynced(goType) {
+			err := c.UpdateSchema(ctx, schemaObj)
+			if err != nil {
+				return err
+			}
+			c.schemaCache.markSynced(goType)
 		}
 	} else {
-		// When AutoSchema is disabled, check schema consistency
-		currentSchema, err := c.GetSchema(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get current schema: %w", err)
-		}
-
 		// Resolve the Dgraph type name the same way mutations and schema
 		// generation do (the DType tag, falling back to the Go struct name).
 		// Using the raw Go struct name here would reject types whose Dgraph
@@ -83,10 +83,21 @@ func (c client) process(ctx context.Context,
 		// declared as `dgraph:"MigrationLock"`.
 		typeName := getNodeType(schemaObj)
 
-		// When AutoSchema is disabled, validate that required schema exists
-		// Fail if user schema for the type doesn't exist, even if only system schema exists
-		if typeName != "" && !strings.Contains(currentSchema, "type "+typeName) {
-			return fmt.Errorf("schema validation failed: database schema does not contain type %s", typeName)
+		// When AutoSchema is disabled, check schema consistency. Schema
+		// alters are additive, so once a type name has been seen in the
+		// schema the check can't start failing — skip the fetch when cached.
+		if !c.options.schemaCache || !c.schemaCache.isVerified(typeName) {
+			currentSchema, err := c.GetSchema(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to get current schema: %w", err)
+			}
+
+			// Validate that required schema exists. Fail if user schema for
+			// the type doesn't exist, even if only system schema exists.
+			if typeName != "" && !strings.Contains(currentSchema, "type "+typeName) {
+				return fmt.Errorf("schema validation failed: database schema does not contain type %s", typeName)
+			}
+			c.schemaCache.markVerified(typeName)
 		}
 	}
 
