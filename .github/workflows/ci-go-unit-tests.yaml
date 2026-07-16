@@ -50,14 +50,6 @@ jobs:
     name: Test remote Dgraph (linux)
     runs-on: ubuntu-latest
 
-    services:
-      dgraph:
-        # Keep the tag in lockstep with the dgraph-io/dgraph version in go.mod.
-        image: dgraph/standalone:v25.3.8
-        ports:
-          - 8080:8080
-          - 9080:9080
-
     steps:
       - uses: actions/checkout@v5
 
@@ -67,8 +59,24 @@ jobs:
           go-version: 1.26.4
           cache-dependency-path: go.sum
 
-      # The standalone image declares no HEALTHCHECK, so the services block
-      # can't gate on readiness — poll the alpha health endpoint ourselves.
+      # Started via docker run rather than a services block so the image tag
+      # can be derived from go.mod — the cluster version stays in lockstep
+      # with the embedded dgraph dependency without anyone remembering to
+      # bump it here. Dgraph releases a matching dgraph/standalone tag for
+      # every module version; a pseudo-version pin would fail the pull here,
+      # loudly.
+      - name: Start Dgraph (version from go.mod)
+        run: |
+          version=$(awk '$1 ~ /^github.com\/dgraph-io\/dgraph\/v[0-9]+$/ {print $2}' go.mod)
+          if [ -z "$version" ]; then
+            echo "Could not find a github.com/dgraph-io/dgraph dependency in go.mod"
+            exit 1
+          fi
+          echo "Starting dgraph/standalone:$version"
+          docker run -d --name dgraph -p 8080:8080 -p 9080:9080 "dgraph/standalone:$version"
+
+      # The standalone image declares no HEALTHCHECK, so poll the alpha
+      # health endpoint before running tests.
       - name: Wait for Dgraph
         run: |
           for i in $(seq 1 30); do
@@ -79,6 +87,7 @@ jobs:
           done
           echo "Dgraph did not become healthy in time"
           curl -sv localhost:8080/health || true
+          docker logs dgraph || true
           exit 1
 
       - name: Run Unit Tests against Dgraph
