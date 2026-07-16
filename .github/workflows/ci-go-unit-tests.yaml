@@ -41,3 +41,56 @@ jobs:
 
       - name: Run Unit Tests
         run: go test -short -race -v .
+
+  # Runs the same suite against a real Dgraph cluster. Setting DGDAO_TEST_ADDR
+  # activates the dgraph:// cases that the embedded-only job skips. Linux only:
+  # macOS runners have no Docker.
+  ci-go-tests-dgraph:
+    timeout-minutes: 20
+    name: Test remote Dgraph (linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.26.4
+          cache-dependency-path: go.sum
+
+      # Started via docker run rather than a services block so the image tag
+      # can be derived from go.mod — the cluster version stays in lockstep
+      # with the embedded dgraph dependency without anyone remembering to
+      # bump it here. Dgraph releases a matching dgraph/standalone tag for
+      # every module version; a pseudo-version pin would fail the pull here,
+      # loudly.
+      - name: Start Dgraph (version from go.mod)
+        run: |
+          version=$(awk '$1 ~ /^github.com\/dgraph-io\/dgraph\/v[0-9]+$/ {print $2}' go.mod)
+          if [ -z "$version" ]; then
+            echo "Could not find a github.com/dgraph-io/dgraph dependency in go.mod"
+            exit 1
+          fi
+          echo "Starting dgraph/standalone:$version"
+          docker run -d --name dgraph -p 8080:8080 -p 9080:9080 "dgraph/standalone:$version"
+
+      # The standalone image declares no HEALTHCHECK, so poll the alpha
+      # health endpoint before running tests.
+      - name: Wait for Dgraph
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf localhost:8080/health | grep -q healthy; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Dgraph did not become healthy in time"
+          curl -sv localhost:8080/health || true
+          docker logs dgraph || true
+          exit 1
+
+      - name: Run Unit Tests against Dgraph
+        env:
+          DGDAO_TEST_ADDR: localhost:9080
+        run: go test -short -race -v .
