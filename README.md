@@ -624,6 +624,49 @@ if loaded {
 Both operations are also available on the typed `Client[T]`, returning the record directly rather
 than hydrating a passed pointer.
 
+## Deferred-Commit Transactions (`NewTxnContext`)
+
+`Insert`, `Upsert`, and `Update` each commit as soon as they're called, so none of them can group
+several mutations into one atomic write. `NewTxnContext` opens a read-write transaction that stages
+any number of mutations and deletes, committing them together only when you call `Commit`.
+
+```go
+ctx := context.Background()
+
+tx := client.NewTxnContext(ctx)
+defer tx.Discard() // no-op after a successful Commit; guarantees cleanup on every other path
+
+// Remove the asset's edge to its old owner.
+if err := tx.DeleteEdge(asset.UID, "owner", oldOwner.UID); err != nil {
+    log.Fatalf("failed to stage edge delete: %v", err)
+}
+
+// Remove a stale token node outright.
+if err := tx.DeleteNode(staleToken.UID); err != nil {
+    log.Fatalf("failed to stage node delete: %v", err)
+}
+
+// Stage the new owner. "Jane Doe" has the `upsert` tag, same as the single-shot example above.
+if err := tx.Upsert(&User{Name: "Jane Doe", Role: "Owner"}); err != nil {
+    log.Fatalf("failed to stage upsert: %v", err)
+}
+
+// Nothing above touched the database until this call.
+if err := tx.Commit(); err != nil {
+    log.Fatalf("failed to commit transaction: %v", err)
+}
+```
+
+`TxnContext` exposes the same write surface as the single-shot API — `Insert`, `Upsert`, `Update`,
+`DeleteEdge`, `DeleteNode`, and `DeletePredicate` — plus `Commit` and `Discard`. Every staged write
+runs the same defaulting, validation, and unique-constraint error translation (to `*UniqueError`) as
+its single-shot counterpart, so grouping mutations costs no safety.
+
+Nothing reaches the database until `Commit` succeeds; `Discard` abandons every staged mutation
+instead. Call `Commit` or `Discard` exactly once. Deferring `Discard` immediately after
+`NewTxnContext`, as in the example, is the safe default: it is a no-op once `Commit` has succeeded,
+but still returns the pooled connection to the pool on any error or panic path.
+
 ## Retrying Aborted Transactions
 
 Under concurrent load, Dgraph may abort a transaction when two writers touch the same data at once.

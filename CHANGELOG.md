@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-17 - Version 0.7.0
+
+- feat: add `Client.NewTxnContext`, a validated, deferred-commit read-write transaction for
+  multi-mutation atomic writes (`Upsert`/`Update`/`Insert`/`DeleteEdge`/`DeleteNode`/
+  `DeletePredicate`), with the same validation and unique-error handling as the single-shot methods
+
 ## 2026-07-10 - Version 0.6.0
 
 - feat: add the `Defaulter` interface; dgdao calls `ApplyDefaults(ctx)` on the model before

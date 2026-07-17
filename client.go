@@ -60,6 +60,13 @@ type Client interface {
 	// The object must be a pointer to a struct and must have a UID field set.
 	Update(context.Context, any) error
 
+	// NewTxnContext starts a validated, deferred-commit read-write transaction.
+	// Unlike Insert/Upsert/Update, which commit per call, the returned
+	// TxnContext stages several mutations and deletes and commits them together
+	// on Commit, applying the same defaults, validation, and unique-error
+	// translation to each staged write. The caller must call Commit or Discard.
+	NewTxnContext(ctx context.Context) *TxnContext
+
 	// Get retrieves a single object by its UID and populates the provided object.
 	// The object parameter must be a pointer to a struct.
 	Get(context.Context, any, string) error
