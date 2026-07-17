@@ -190,7 +190,8 @@ func TestTxnContext_MultiOpCommit(t *testing.T) {
 			require.NoError(t, client.Query(ctx, txnDoc{}).Nodes(&before))
 
 			txn2 := client.NewTxnContext(ctx)
-			require.Error(t, txn2.Insert(&txnDoc{Name: "upserted", Note: "dupe"}), "duplicate unique name is rejected before commit")
+			require.Error(t, txn2.Insert(&txnDoc{Name: "upserted", Note: "dupe"}),
+				"duplicate unique name is rejected before commit")
 			txn2.Discard()
 
 			var after []txnDoc
