@@ -33,6 +33,11 @@ import (
 // idiomatic pattern is to defer Discard immediately after NewTxnContext, since
 // Discard is a no-op after a successful Commit but still guarantees the
 // connection is returned to the pool on error and panic paths.
+//
+// Schema note: unlike the single-shot write methods, staged writes on a
+// TxnContext do not run autoSchema schema creation. A type written only
+// through NewTxnContext must already have its schema applied — by a prior
+// single-shot write of that type, or by an explicit schema migration.
 type TxnContext struct {
 	c   client
 	ctx context.Context
