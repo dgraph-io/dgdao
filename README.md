@@ -636,10 +636,10 @@ Two handles cooperate:
 
 - `tx` (the `TxnContext`) carries the transaction's lifecycle (`Commit`, `Discard`) and its
   graph-primitive deletes (`DeleteEdge`, `DeleteNode`, `DeletePredicate`).
-- `client.InTxn(tx)` is the validated CRUD surface scoped to `tx` — the untyped read path
-  (`Query`, `QueryRaw`, `Get`) as well as the writes. Every staged write runs the same defaulting,
-  validation, and unique-constraint error translation (to `*UniqueError`) as its single-shot
-  counterpart, so grouping mutations costs no safety.
+- `client.InTxn(tx)` is the validated CRUD surface scoped to `tx` — the untyped read path (`Query`,
+  `QueryRaw`, `Get`) as well as the writes. Every staged write runs the same defaulting, validation,
+  and unique-constraint error translation (to `*UniqueError`) as its single-shot counterpart, so
+  grouping mutations costs no safety.
 
 ```go
 ctx := context.Background()
@@ -708,11 +708,11 @@ if err := tx.Commit(); err != nil {
 }
 ```
 
-> **Backend note.** Reads within a transaction observe writes staged earlier in the same
-> transaction (read-your-writes), and transactions abort on conflict, only against a real Dgraph
-> cluster. The embedded `file://` engine commits each mutation immediately, so it neither serves
-> read-your-writes across an interactive transaction nor aborts on conflict. Reads-only transactions
-> and read-then-write-then-commit sequences behave identically on both backends; use a `dgraph://`
+> **Backend note.** Reads within a transaction observe writes staged earlier in the same transaction
+> (read-your-writes), and transactions abort on conflict, only against a real Dgraph cluster. The
+> embedded `file://` engine commits each mutation immediately, so it neither serves read-your-writes
+> across an interactive transaction nor aborts on conflict. Reads-only transactions and
+> read-then-write-then-commit sequences behave identically on both backends; use a `dgraph://`
 > cluster where read-your-writes or conflict-abort semantics matter.
 
 ## Retrying Aborted Transactions
