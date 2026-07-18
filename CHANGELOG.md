@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-07-17 - Version 0.7.1
+## 2026-07-17 - Version 0.8.0
 
 - feat: add `Client.InTxn(tx)` and `typed.Client[T].InTxn(tx)`, returning transaction-scoped clients
   whose full surface — reads (`Query`, `QueryRaw`, `Get`), writes (`Insert`, `Upsert`, `Update`,
