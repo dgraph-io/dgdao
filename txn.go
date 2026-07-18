@@ -12,32 +12,41 @@ import (
 	"github.com/dolan-in/dgman/v2"
 )
 
-// TxnContext is a validated, deferred-commit read-write transaction.
+// TxnContext is a deferred-commit read-write transaction handle.
 //
 // The single-shot Client write methods (Insert, Upsert, Update) each open a
 // dgman transaction with SetCommitNow, committing per call, so a caller cannot
-// group several mutations into one atomic commit through the typed API. A
-// TxnContext removes that limit: it opens one dgman transaction WITHOUT
-// SetCommitNow, stages any number of mutations and deletes, and commits them
-// together only when Commit is called.
+// group several mutations into one atomic commit. A TxnContext removes that
+// limit: it opens one dgman transaction WITHOUT SetCommitNow, and any number of
+// reads, staged mutations, and deletes run against it until Commit lands them
+// together.
 //
-// Every staged write runs the SAME pre-mutation pipeline the single-shot methods
-// apply — default population (Defaulter) followed by struct validation
-// (validate: tags and SelfValidator) — and the same unique-constraint error
-// translation to a typed *UniqueError. Grouping mutations therefore costs no
-// validation, which is the whole point: callers that need multi-mutation
-// atomicity no longer have to drop to raw dgman and lose validation.
+// A TxnContext carries the transaction's lifecycle (Commit, Discard), its reads
+// (Query, QueryRaw, Get), and its graph-primitive deletes (DeleteEdge,
+// DeleteNode, DeletePredicate). Validated writes — Insert, Upsert, Update,
+// Delete, LoadOrStore, LoadAndDelete — run through the txn-scoped Client that
+// Client.InTxn(tx) returns; that scoped client applies the same defaults,
+// validation, and unique-error translation as the single-shot methods, so
+// grouping mutations into one atomic commit costs no validation. The idiomatic
+// pattern is:
+//
+//	tx := client.NewTxnContext(ctx)
+//	defer tx.Discard()
+//	sc := client.InTxn(tx)
+//	if err := sc.Upsert(ctx, obj); err != nil { return err }
+//	if err := tx.DeleteEdge(uid, "pred"); err != nil { return err }
+//	return tx.Commit()
 //
 // A TxnContext holds a Dgraph connection from the client pool for its lifetime.
 // The caller must release it by calling Commit or Discard exactly once; the
-// idiomatic pattern is to defer Discard immediately after NewTxnContext, since
+// idiomatic pattern defers Discard immediately after NewTxnContext, since
 // Discard is a no-op after a successful Commit but still guarantees the
 // connection is returned to the pool on error and panic paths.
 //
-// Schema note: unlike the single-shot write methods, staged writes on a
-// TxnContext do not run autoSchema schema creation. A type written only
-// through NewTxnContext must already have its schema applied — by a prior
-// single-shot write of that type, or by an explicit schema migration.
+// Schema note: unlike the single-shot write methods, staged writes do not run
+// autoSchema schema creation. A type written only through a transaction must
+// already have its schema applied — by a prior single-shot write of that type,
+// or by an explicit schema migration.
 type TxnContext struct {
 	c   client
 	ctx context.Context
@@ -70,57 +79,44 @@ func (c client) NewTxnContext(ctx context.Context) *TxnContext {
 	return t
 }
 
-// Insert stages an insert of obj (a pointer to a struct, or a slice of such
-// pointers) on the transaction, after applying defaults and validating it.
-func (t *TxnContext) Insert(obj any) error {
-	return t.stageMutation(obj, func(obj any) ([]string, error) {
-		return t.txn.MutateBasic(obj)
-	})
+// Query returns a query builder that reads within the transaction, so its
+// results reflect writes already staged on the same txn (read-your-writes). It
+// mirrors Client.Query but binds to the transaction rather than a fresh
+// read-only one, joining the transaction's read-set. It returns nil if the
+// transaction failed to acquire a connection.
+func (t *TxnContext) Query(model any) *dgman.Query {
+	if t.initErr != nil || t.txn == nil {
+		return nil
+	}
+	model = UnwrapSchema(model)
+	return t.txn.Get(model).All(t.c.options.maxEdgeTraversal)
 }
 
-// Upsert stages an insert-or-update of obj on the transaction, after applying
-// defaults and validating it. With no predicates, the first field tagged
-// dgraph:"upsert" is used as the match key.
-func (t *TxnContext) Upsert(obj any, predicates ...string) error {
-	return t.stageMutation(obj, func(obj any) ([]string, error) {
-		return t.txn.Upsert(obj, predicates...)
-	})
+// QueryRaw runs a raw DQL query with optional variables within the transaction,
+// mirroring Client.QueryRaw but reading against the transaction's read-set so
+// the query observes writes already staged on the same txn.
+func (t *TxnContext) QueryRaw(ctx context.Context, q string, vars map[string]string) ([]byte, error) {
+	if t.initErr != nil {
+		return nil, t.initErr
+	}
+	resp, err := t.txn.Txn().QueryWithVars(ctx, q, vars)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetJson(), nil
 }
 
-// Update stages an update of obj on the transaction, after applying defaults and
-// validating it. As with the single-shot Client.Update, obj must carry a UID.
-func (t *TxnContext) Update(obj any) error {
-	return t.stageMutation(obj, func(obj any) ([]string, error) {
-		return t.txn.MutateBasic(obj)
-	})
-}
-
-// stageMutation runs the shared pre-mutation pipeline — schema-wrapper unwrap,
-// default population, struct validation — then the staged dgman write, and
-// translates a Dgraph unique-constraint violation into a typed *UniqueError.
-// It mirrors the no-CommitNow path of client.process and the pre-mutation steps
-// of the single-shot Insert/Upsert/Update methods, so a staged write behaves
-// exactly like a single-shot write minus the immediate commit.
-func (t *TxnContext) stageMutation(obj any, write func(any) ([]string, error)) error {
+// Get reads a single object by UID within the transaction, mirroring
+// Client.Get. obj must be a non-nil pointer to a struct.
+func (t *TxnContext) Get(ctx context.Context, obj any, uid string) error {
 	if t.initErr != nil {
 		return t.initErr
 	}
 	obj = UnwrapSchema(obj)
-	// Apply defaults before validation, so a defaulted field can satisfy a
-	// validate:"required" rule — matching the single-shot write ordering.
-	if err := t.c.applyDefaults(t.ctx, obj); err != nil {
+	if err := checkPointer(obj); err != nil {
 		return err
 	}
-	if err := t.c.validateStruct(t.ctx, obj); err != nil {
-		return err
-	}
-	if _, err := write(obj); err != nil {
-		if uniqueErr := parseUniqueError(err); uniqueErr != nil {
-			return uniqueErr
-		}
-		return err
-	}
-	return nil
+	return t.txn.Get(obj).UID(uid).All(t.c.options.maxEdgeTraversal).Node()
 }
 
 // DeleteEdge stages deletion of an edge from node uid over predicate. With no

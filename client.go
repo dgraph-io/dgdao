@@ -63,9 +63,21 @@ type Client interface {
 	// NewTxnContext starts a validated, deferred-commit read-write transaction.
 	// Unlike Insert/Upsert/Update, which commit per call, the returned
 	// TxnContext stages several mutations and deletes and commits them together
-	// on Commit, applying the same defaults, validation, and unique-error
-	// translation to each staged write. The caller must call Commit or Discard.
+	// on Commit. Validated writes run through the txn-scoped client from InTxn;
+	// the TxnContext itself carries the transaction's lifecycle, reads, and
+	// graph-primitive deletes. The caller must call Commit or Discard.
 	NewTxnContext(ctx context.Context) *TxnContext
+
+	// InTxn returns a txn-scoped Client whose entire surface — reads, writes,
+	// LoadOrStore, and LoadAndDelete — routes through tx instead of a fresh
+	// read-only or commit-now transaction. Reads join tx's read-set; writes
+	// stage on tx and land only when tx.Commit is called. Every staged write
+	// runs the same defaults, validation, and unique-error translation as the
+	// single-shot methods. Schema and lifecycle operations (UpdateSchema,
+	// DropAll, Close, ...) are non-transactional and operate on the underlying
+	// client unchanged. The passed tx must have been created by this client's
+	// NewTxnContext.
+	InTxn(tx *TxnContext) Client
 
 	// Get retrieves a single object by its UID and populates the provided object.
 	// The object parameter must be a pointer to a struct.

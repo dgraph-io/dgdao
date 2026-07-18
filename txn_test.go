@@ -109,9 +109,10 @@ func TestTxnContext_ValidationFires(t *testing.T) {
 
 			txn := client.NewTxnContext(ctx)
 			defer txn.Discard()
+			sc := client.InTxn(txn)
 
 			invalid := &txnUser{Email: "no-name@example.com"} // Name is required.
-			err := txn.Upsert(invalid)
+			err := sc.Upsert(ctx, invalid)
 			require.Error(t, err, "Upsert of an invalid struct should fail validation")
 			require.Contains(t, err.Error(), "Name", "validation error should name the failed field")
 			require.Empty(t, invalid.UID, "no UID should be assigned when validation blocks the write")
@@ -156,10 +157,11 @@ func TestTxnContext_MultiOpCommit(t *testing.T) {
 			// new node, then commit all three together.
 			txn := client.NewTxnContext(ctx)
 			defer txn.Discard()
+			sc := client.InTxn(txn)
 			require.NoError(t, txn.DeleteEdge(main.UID, "related"))
 			require.NoError(t, txn.DeleteNode(victim.UID))
 			upserted := &txnDoc{Name: "upserted", Note: "new"}
-			require.NoError(t, txn.Upsert(upserted))
+			require.NoError(t, sc.Upsert(ctx, upserted))
 			require.NoError(t, txn.Commit())
 
 			// main kept its scalars but lost the edge.
@@ -190,7 +192,8 @@ func TestTxnContext_MultiOpCommit(t *testing.T) {
 			require.NoError(t, client.Query(ctx, txnDoc{}).Nodes(&before))
 
 			txn2 := client.NewTxnContext(ctx)
-			require.Error(t, txn2.Insert(&txnDoc{Name: "upserted", Note: "dupe"}),
+			sc2 := client.InTxn(txn2)
+			require.Error(t, sc2.Insert(ctx, &txnDoc{Name: "upserted", Note: "dupe"}),
 				"duplicate unique name is rejected before commit")
 			txn2.Discard()
 
@@ -220,9 +223,10 @@ func TestTxnContext_UniqueErrorTranslation(t *testing.T) {
 
 			txn := client.NewTxnContext(ctx)
 			defer txn.Discard()
+			sc := client.InTxn(txn)
 
 			dupe := &txnDoc{Name: "dup", Note: "second"}
-			err := txn.Insert(dupe)
+			err := sc.Insert(ctx, dupe)
 			require.Error(t, err, "a duplicate unique value should fail")
 
 			var uniqueErr *dg.UniqueError
