@@ -634,12 +634,12 @@ until you call `Commit`.
 
 Two handles cooperate:
 
-- `tx` (the `TxnContext`) carries the transaction's lifecycle (`Commit`, `Discard`), its reads
-  (`Query`, `QueryRaw`, `Get`), and its graph-primitive deletes (`DeleteEdge`, `DeleteNode`,
-  `DeletePredicate`).
-- `client.InTxn(tx)` is the validated CRUD surface scoped to `tx`. Every staged write runs the same
-  defaulting, validation, and unique-constraint error translation (to `*UniqueError`) as its
-  single-shot counterpart, so grouping mutations costs no safety.
+- `tx` (the `TxnContext`) carries the transaction's lifecycle (`Commit`, `Discard`) and its
+  graph-primitive deletes (`DeleteEdge`, `DeleteNode`, `DeletePredicate`).
+- `client.InTxn(tx)` is the validated CRUD surface scoped to `tx` — the untyped read path
+  (`Query`, `QueryRaw`, `Get`) as well as the writes. Every staged write runs the same defaulting,
+  validation, and unique-constraint error translation (to `*UniqueError`) as its single-shot
+  counterpart, so grouping mutations costs no safety.
 
 ```go
 ctx := context.Background()

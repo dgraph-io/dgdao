@@ -63,8 +63,8 @@ type Client interface {
 	// NewTxnContext starts a validated, deferred-commit read-write transaction.
 	// Unlike Insert/Upsert/Update, which commit per call, the returned
 	// TxnContext stages several mutations and deletes and commits them together
-	// on Commit. Validated writes run through the txn-scoped client from InTxn;
-	// the TxnContext itself carries the transaction's lifecycle, reads, and
+	// on Commit. Validated writes and reads run through the txn-scoped client
+	// from InTxn; the TxnContext itself carries the transaction's lifecycle and
 	// graph-primitive deletes. The caller must call Commit or Discard.
 	NewTxnContext(ctx context.Context) *TxnContext
 

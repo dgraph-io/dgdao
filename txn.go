@@ -21,14 +21,14 @@ import (
 // reads, staged mutations, and deletes run against it until Commit lands them
 // together.
 //
-// A TxnContext carries the transaction's lifecycle (Commit, Discard), its reads
-// (Query, QueryRaw, Get), and its graph-primitive deletes (DeleteEdge,
-// DeleteNode, DeletePredicate). Validated writes — Insert, Upsert, Update,
-// Delete, LoadOrStore, LoadAndDelete — run through the txn-scoped Client that
-// Client.InTxn(tx) returns; that scoped client applies the same defaults,
-// validation, and unique-error translation as the single-shot methods, so
-// grouping mutations into one atomic commit costs no validation. The idiomatic
-// pattern is:
+// A TxnContext carries the transaction's lifecycle (Commit, Discard) and its
+// graph-primitive deletes (DeleteEdge, DeleteNode, DeletePredicate). Its reads
+// (query, queryRaw, get) are internal; both reads and validated writes —
+// Insert, Upsert, Update, Delete, LoadOrStore, LoadAndDelete — run through the
+// txn-scoped Client that Client.InTxn(tx) returns, the public untyped surface
+// for both. That scoped client applies the same defaults, validation, and
+// unique-error translation as the single-shot methods, so grouping mutations
+// into one atomic commit costs no validation. The idiomatic pattern is:
 //
 //	tx := client.NewTxnContext(ctx)
 //	defer tx.Discard()
@@ -79,12 +79,16 @@ func (c client) NewTxnContext(ctx context.Context) *TxnContext {
 	return t
 }
 
-// Query returns a query builder that reads within the transaction, so its
+// query returns a query builder that reads within the transaction, so its
 // results reflect writes already staged on the same txn (read-your-writes). It
 // mirrors Client.Query but binds to the transaction rather than a fresh
 // read-only one, joining the transaction's read-set. It returns nil if the
 // transaction failed to acquire a connection.
-func (t *TxnContext) Query(model any) *dgman.Query {
+//
+// Unexported: the public untyped read path is the txn-scoped Client that
+// Client.InTxn(tx) returns (its Query delegates here); TxnContext itself does
+// not expose reads.
+func (t *TxnContext) query(model any) *dgman.Query {
 	if t.initErr != nil || t.txn == nil {
 		return nil
 	}
@@ -92,10 +96,13 @@ func (t *TxnContext) Query(model any) *dgman.Query {
 	return t.txn.Get(model).All(t.c.options.maxEdgeTraversal)
 }
 
-// QueryRaw runs a raw DQL query with optional variables within the transaction,
+// queryRaw runs a raw DQL query with optional variables within the transaction,
 // mirroring Client.QueryRaw but reading against the transaction's read-set so
 // the query observes writes already staged on the same txn.
-func (t *TxnContext) QueryRaw(ctx context.Context, q string, vars map[string]string) ([]byte, error) {
+//
+// Unexported: reached only through the txn-scoped Client from Client.InTxn(tx),
+// whose QueryRaw delegates here.
+func (t *TxnContext) queryRaw(ctx context.Context, q string, vars map[string]string) ([]byte, error) {
 	if t.initErr != nil {
 		return nil, t.initErr
 	}
@@ -106,9 +113,12 @@ func (t *TxnContext) QueryRaw(ctx context.Context, q string, vars map[string]str
 	return resp.GetJson(), nil
 }
 
-// Get reads a single object by UID within the transaction, mirroring
+// get reads a single object by UID within the transaction, mirroring
 // Client.Get. obj must be a non-nil pointer to a struct.
-func (t *TxnContext) Get(ctx context.Context, obj any, uid string) error {
+//
+// Unexported: reached only through the txn-scoped Client from Client.InTxn(tx),
+// whose Get delegates here.
+func (t *TxnContext) get(ctx context.Context, obj any, uid string) error {
 	if t.initErr != nil {
 		return t.initErr
 	}

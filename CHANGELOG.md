@@ -9,11 +9,13 @@
 - feat: a typed `WhereEdge` query built from `typed.Client[T].InTxn(tx)` runs its edge-match pre-pass
   in the same transaction as its data block, so a guarded read-then-delete resolves against one
   read-set
-- feat: add `TxnContext.Query`, `TxnContext.QueryRaw`, and `TxnContext.Get` for reads on the
-  transaction
+- feat: add `typed.Client[T].NewTxnContext`, a pass-through to the underlying `dgdao.Client`'s
+  `NewTxnContext` so a typed-client holder can start a transaction without reaching for the
+  untyped client
 - breaking: move `Insert`, `Upsert`, and `Update` off `TxnContext`; stage validated writes through
-  `client.InTxn(tx)` instead. `TxnContext` now carries the transaction's lifecycle, reads, and
-  graph-primitive deletes (`DeleteEdge`, `DeleteNode`, `DeletePredicate`)
+  `client.InTxn(tx)` instead. `TxnContext` now carries only the transaction's lifecycle and
+  graph-primitive deletes (`DeleteEdge`, `DeleteNode`, `DeletePredicate`); its reads (`Query`,
+  `QueryRaw`, `Get`) are internal, reached only through `client.InTxn(tx)`
 
 ## 2026-07-17 - Version 0.7.0
 

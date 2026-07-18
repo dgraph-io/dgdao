@@ -46,18 +46,18 @@ func (c client) InTxn(tx *TxnContext) Client {
 // argument is accepted for interface parity. Returns nil if the transaction
 // failed to acquire a connection.
 func (tc txnClient) Query(_ context.Context, model any) *dgman.Query {
-	return tc.tx.Query(model)
+	return tc.tx.query(model)
 }
 
 // QueryRaw runs a raw DQL query within the transaction, mirroring
 // Client.QueryRaw. The query observes writes already staged on the same txn.
 func (tc txnClient) QueryRaw(ctx context.Context, q string, vars map[string]string) ([]byte, error) {
-	return tc.tx.QueryRaw(ctx, q, vars)
+	return tc.tx.queryRaw(ctx, q, vars)
 }
 
 // Get reads a single object by UID within the transaction, mirroring Client.Get.
 func (tc txnClient) Get(ctx context.Context, obj any, uid string) error {
-	return tc.tx.Get(ctx, obj, uid)
+	return tc.tx.get(ctx, obj, uid)
 }
 
 // Insert stages an insert of obj on the transaction after applying defaults and
