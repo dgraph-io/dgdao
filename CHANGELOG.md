@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-17 - Version 0.7.1
+
+- feat: add `Client.InTxn(tx)` and `typed.Client[T].InTxn(tx)`, returning transaction-scoped clients
+  whose full surface — reads (`Query`, `QueryRaw`, `Get`), writes (`Insert`, `Upsert`, `Update`,
+  `Delete`), and `LoadOrStore`/`LoadAndDelete` — runs on a `TxnContext` from `NewTxnContext`, with the
+  same defaults, validation, and unique-error translation as the single-shot methods
+- feat: a typed `WhereEdge` query built from `typed.Client[T].InTxn(tx)` runs its edge-match pre-pass
+  in the same transaction as its data block, so a guarded read-then-delete resolves against one
+  read-set
+- feat: add `TxnContext.Query`, `TxnContext.QueryRaw`, and `TxnContext.Get` for reads on the
+  transaction
+- breaking: move `Insert`, `Upsert`, and `Update` off `TxnContext`; stage validated writes through
+  `client.InTxn(tx)` instead. `TxnContext` now carries the transaction's lifecycle, reads, and
+  graph-primitive deletes (`DeleteEdge`, `DeleteNode`, `DeletePredicate`)
+
 ## 2026-07-17 - Version 0.7.0
 
 - feat: add `Client.NewTxnContext`, a validated, deferred-commit read-write transaction for

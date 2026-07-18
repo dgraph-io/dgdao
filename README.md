@@ -624,11 +624,22 @@ if loaded {
 Both operations are also available on the typed `Client[T]`, returning the record directly rather
 than hydrating a passed pointer.
 
-## Deferred-Commit Transactions (`NewTxnContext`)
+## Deferred-Commit Transactions (`NewTxnContext` and `InTxn`)
 
 `Insert`, `Upsert`, and `Update` each commit as soon as they're called, so none of them can group
-several mutations into one atomic write. `NewTxnContext` opens a read-write transaction that stages
-any number of mutations and deletes, committing them together only when you call `Commit`.
+several mutations into one atomic write. `NewTxnContext` opens a read-write transaction, and
+`client.InTxn(tx)` returns a `Client` whose entire surface — reads, writes, `LoadOrStore`,
+`LoadAndDelete` — runs on that transaction. Reads join its read-set, writes stage, and nothing lands
+until you call `Commit`.
+
+Two handles cooperate:
+
+- `tx` (the `TxnContext`) carries the transaction's lifecycle (`Commit`, `Discard`), its reads
+  (`Query`, `QueryRaw`, `Get`), and its graph-primitive deletes (`DeleteEdge`, `DeleteNode`,
+  `DeletePredicate`).
+- `client.InTxn(tx)` is the validated CRUD surface scoped to `tx`. Every staged write runs the same
+  defaulting, validation, and unique-constraint error translation (to `*UniqueError`) as its
+  single-shot counterpart, so grouping mutations costs no safety.
 
 ```go
 ctx := context.Background()
@@ -636,7 +647,9 @@ ctx := context.Background()
 tx := client.NewTxnContext(ctx)
 defer tx.Discard() // no-op after a successful Commit; guarantees cleanup on every other path
 
-// Remove the asset's edge to its old owner.
+sc := client.InTxn(tx) // validated writes and reads scoped to tx
+
+// Remove the asset's edge to its old owner (graph primitive: on tx).
 if err := tx.DeleteEdge(asset.UID, "owner", oldOwner.UID); err != nil {
     log.Fatalf("failed to stage edge delete: %v", err)
 }
@@ -647,7 +660,7 @@ if err := tx.DeleteNode(staleToken.UID); err != nil {
 }
 
 // Stage the new owner. "Jane Doe" has the `upsert` tag, same as the single-shot example above.
-if err := tx.Upsert(&User{Name: "Jane Doe", Role: "Owner"}); err != nil {
+if err := sc.Upsert(ctx, &User{Name: "Jane Doe", Role: "Owner"}); err != nil {
     log.Fatalf("failed to stage upsert: %v", err)
 }
 
@@ -657,15 +670,50 @@ if err := tx.Commit(); err != nil {
 }
 ```
 
-`TxnContext` exposes the same write surface as the single-shot API — `Insert`, `Upsert`, `Update`,
-`DeleteEdge`, `DeleteNode`, and `DeletePredicate` — plus `Commit` and `Discard`. Every staged write
-runs the same defaulting, validation, and unique-constraint error translation (to `*UniqueError`) as
-its single-shot counterpart, so grouping mutations costs no safety.
-
 Nothing reaches the database until `Commit` succeeds; `Discard` abandons every staged mutation
 instead. Call `Commit` or `Discard` exactly once. Deferring `Discard` immediately after
 `NewTxnContext`, as in the example, is the safe default: it is a no-op once `Commit` has succeeded,
-but still returns the pooled connection to the pool on any error or panic path.
+but still returns the pooled connection to the pool on any error or panic path. Schema and lifecycle
+operations reached through the scoped client (`UpdateSchema`, `DropAll`, `Close`, ...) are
+non-transactional and run on the underlying client unchanged, because Dgraph `Alter` is not part of
+a transaction.
+
+### Typed transactions and guarded reads
+
+`typed.Client[T].InTxn(tx)` scopes a typed client to the same transaction, so typed queries and
+writes run on `tx` too. This is what makes a guarded read-then-delete correct: a typed `WhereEdge`
+query resolves its edge-match pre-pass and its data block against one transactional read-set, so a
+concurrent edge change aborts the transaction rather than slipping between the read and the delete.
+
+```go
+tx := client.NewTxnContext(ctx)
+defer tx.Discard()
+
+owners := typed.NewClient[Owner](client).InTxn(tx)
+
+// Read: find owners whose pet is named "Fido" (the WhereEdge pre-pass runs in tx).
+matched, err := owners.Query(ctx).WhereEdge("pets", `eq(name, $1)`, "Fido").Nodes()
+if err != nil {
+    log.Fatalf("guarded read failed: %v", err)
+}
+
+// Delete each matched owner and commit atomically.
+for _, o := range matched {
+    if err := owners.Delete(ctx, o.UID); err != nil {
+        log.Fatalf("failed to stage delete: %v", err)
+    }
+}
+if err := tx.Commit(); err != nil {
+    log.Fatalf("commit failed: %v", err) // a conflicting concurrent write aborts here
+}
+```
+
+> **Backend note.** Reads within a transaction observe writes staged earlier in the same
+> transaction (read-your-writes), and transactions abort on conflict, only against a real Dgraph
+> cluster. The embedded `file://` engine commits each mutation immediately, so it neither serves
+> read-your-writes across an interactive transaction nor aborts on conflict. Reads-only transactions
+> and read-then-write-then-commit sequences behave identically on both backends; use a `dgraph://`
+> cluster where read-your-writes or conflict-abort semantics matter.
 
 ## Retrying Aborted Transactions
 
