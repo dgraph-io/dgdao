@@ -24,6 +24,22 @@ func NewClient[T any](conn dgdao.Client) *Client[T] {
 	return &Client[T]{conn: conn}
 }
 
+// InTxn returns a Client[T] whose reads and writes run within tx. It binds the
+// typed client to the txn-scoped dgdao.Client (conn.InTxn(tx)): typed writes
+// (Add, Update, Upsert, LoadOrStore, LoadAndDelete, Delete) stage on tx and land
+// on tx.Commit, and typed queries execute on tx's read-set.
+//
+// This is what makes a guarded read-then-delete correct across the typed layer.
+// A Query built from the returned client runs its WhereEdge pre-pass through the
+// same tx — the pre-pass reads through the client's conn, which is now tx — so
+// the edge-match var block and the data block resolve against one transactional
+// read-set. Were the pre-pass to read on a fresh connection, its read-set would
+// split from the delete's, and a concurrent edge change could slip between the
+// two without aborting the transaction.
+func (c *Client[T]) InTxn(tx *dgdao.TxnContext) *Client[T] {
+	return &Client[T]{conn: c.conn.InTxn(tx)}
+}
+
 // Get loads the T with the given UID.
 func (c *Client[T]) Get(ctx context.Context, uid string) (rec *T, err error) {
 	ctx, span := currentTracer().StartSpan(ctx, "get", entityName[T]())
