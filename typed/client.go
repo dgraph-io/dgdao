@@ -24,6 +24,17 @@ func NewClient[T any](conn dgdao.Client) *Client[T] {
 	return &Client[T]{conn: conn}
 }
 
+// NewTxnContext opens a validated, deferred-commit read-write transaction on
+// the underlying client, mirroring dgdao.Client.NewTxnContext. Pass the
+// returned *dgdao.TxnContext to InTxn to scope this typed client to it:
+//
+//	tx := typedClient.NewTxnContext(ctx)
+//	defer tx.Discard()
+//	scoped := typedClient.InTxn(tx)
+func (c *Client[T]) NewTxnContext(ctx context.Context) *dgdao.TxnContext {
+	return c.conn.NewTxnContext(ctx)
+}
+
 // InTxn returns a Client[T] whose reads and writes run within tx. It binds the
 // typed client to the txn-scoped dgdao.Client (conn.InTxn(tx)): typed writes
 // (Add, Update, Upsert, LoadOrStore, LoadAndDelete, Delete) stage on tx and land
