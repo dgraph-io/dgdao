@@ -77,6 +77,12 @@ type Client interface {
 	// DropAll, Close, ...) are non-transactional and operate on the underlying
 	// client unchanged. The passed tx must have been created by this client's
 	// NewTxnContext.
+	//
+	// Embedding note: unlike single-shot Insert/Upsert/Update, staged writes do
+	// not inject the dgraph:"embedding" shadow __vec predicates for SimString
+	// fields. A struct written only through a transaction keeps its primary
+	// text but gets no shadow vector until a later single-shot write recomputes
+	// one.
 	InTxn(tx *TxnContext) Client
 
 	// Get retrieves a single object by its UID and populates the provided object.

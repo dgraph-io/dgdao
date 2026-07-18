@@ -198,6 +198,10 @@ func (tc txnClient) LoadAndDelete(_ context.Context, obj any, key any, predicate
 // mirrors the pre-mutation steps of the single-shot Insert/Upsert/Update
 // methods, so a staged write behaves exactly like a single-shot write minus the
 // immediate commit.
+//
+// One exception: it does not run the single-shot methods' post-mutation
+// injectShadowVectors step, so a dgraph:"embedding" SimString field staged here
+// is written without its shadow __vec predicate.
 func (tc txnClient) stage(ctx context.Context, obj any, applyDefaults bool, write func(any) ([]string, error)) error {
 	if tc.tx.initErr != nil {
 		return tc.tx.initErr
