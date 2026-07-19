@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-07-19 - Version 0.9.0
+
+- breaking: rename `TxnContext` -> `Txn` and `NewTxnContext` -> `NewTxn`
+- breaking: `InTxn` now returns an exported, curated `*ClientTxn` (was the interface-typed
+  `Client`): a transaction-scoped client that carries only record data-ops. Connection lifecycle
+  (`Close`, `WithRetry`, schema and drop operations) and transaction entry (`NewTxn`, `InTxn`) are
+  absent rather than hidden, so starting a transaction from within a transaction is unrepresentable
+  at the type level. A package-level `InTxn(tx *Txn) *ClientTxn` is the sole constructor;
+  `Client.InTxn` delegates to it
+- feat: add `ClientCore`, the narrow record data-ops interface (`Get`, `Insert`, `Upsert`, `Update`,
+  `Delete`, `GetOrInsert`, `GetAndDelete`, `Query`, `QueryRaw`) satisfied by both the connection
+  `Client` and `*ClientTxn`; `Client` embeds it, and `typed.Client[T]`, `typed.Query[T]`, and
+  `typed.MultiQuery[T]` bind to it so one typed client serves both the connection and transaction
+  modes
+- breaking: rename `LoadOrStore` -> `GetOrInsert` and `LoadAndDelete` -> `GetAndDelete` across the
+  untyped and typed clients, with docs that lead with the operation, the single-winner concurrency
+  contract, and the use cases (idempotent creation; single-use token consume); the `cf. sync.Map`
+  lineage notes remain
+- breaking: typed `Client[T].Add` -> `Insert`; typed clients gain `QueryRaw` and drop `Iter`
+  (iterate via `Query(ctx).IterNodes()`) and `NewTxnContext` (transaction entry is a
+  connection-client concern)
+- breaking: delete the vestigial `InsertRaw` (identical to `Insert` since the unique-check
+  unification) and the load-test `RAW_INSERT` mode built on it
+- breaking: fold the generated-wrapper base into core as `Entity[R]` / `AsEntity` / `Record()`;
+  `UnwrapSchema` -> `AsRecord`, probing `Record()`; the `Schema` marker interface -> `Record`
+  (`RecordTypeName`)
+
 ## 2026-07-17 - Version 0.8.0
 
 - feat: add `Client.InTxn(tx)` and `typed.Client[T].InTxn(tx)`, returning transaction-scoped clients
