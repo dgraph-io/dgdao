@@ -25,76 +25,34 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Client provides an interface for dgdao operations
+// Client provides an interface for dgdao operations: the shared record
+// data-ops surface (ClientCore) plus the connection-scoped operations —
+// transaction entry, lifecycle, schema management, and retry.
 type Client interface {
-	// Insert adds a new object or slice of objects to the database.
-	// The object must be a pointer to a struct with appropriate dgraph tags.
-	Insert(context.Context, any) error
+	ClientCore
 
-	// InsertRaw adds a new object or slice of objects to the database.
-	// The object must be a pointer to a struct with appropriate dgraph tags.
-	// This is a no-op for remote Dgraph clients. For local clients, this
-	// function mutates the Dgraph engine directly. No unique checks are performed.
-	// The `UID` field for any objects must be set using the Dgraph blank node
-	// prefix concept (e.g. "_:user1") to allow the engine to generate a UID for the object.
-	InsertRaw(context.Context, any) error
+	// NewTxn starts a validated, deferred-commit read-write transaction.
+	// Unlike Insert/Upsert/Update, which commit per call, the returned Txn
+	// stages several mutations and deletes and commits them together on
+	// Commit. Validated writes and reads run through the transaction-scoped
+	// ClientTxn from InTxn; the Txn itself carries the transaction's
+	// lifecycle and graph-primitive deletes. The caller must call Commit or
+	// Discard.
+	NewTxn(ctx context.Context) *Txn
 
-	// Upsert inserts an object if it doesn't exist or updates it if it does.
-	// This operation requires a field with a unique directive in the dgraph tag.
-	// If no predicates are specified, the first predicate with the `upsert` tag will be used.
-	// If none are specified in the predicates argument, the first predicate with the `upsert` tag
-	// will be used.
-	Upsert(context.Context, any, ...string) error
-
-	// LoadOrStore stores the object only if no node matches the upsert
-	// predicates, returning loaded=true when an existing node already matched
-	// (the object is then populated from it). Insert-if-absent.
-	LoadOrStore(ctx context.Context, obj any, predicates ...string) (loaded bool, err error)
-
-	// LoadAndDelete atomically reads the node whose key predicate equals key
-	// into obj and deletes it, returning loaded=false when none matched.
-	// Read-and-consume; concurrent callers elect one winner.
-	LoadAndDelete(ctx context.Context, obj any, key any, predicates ...string) (loaded bool, err error)
-
-	// Update modifies an existing object in the database.
-	// The object must be a pointer to a struct and must have a UID field set.
-	Update(context.Context, any) error
-
-	// NewTxnContext starts a validated, deferred-commit read-write transaction.
-	// Unlike Insert/Upsert/Update, which commit per call, the returned
-	// TxnContext stages several mutations and deletes and commits them together
-	// on Commit. Validated writes and reads run through the txn-scoped client
-	// from InTxn; the TxnContext itself carries the transaction's lifecycle and
-	// graph-primitive deletes. The caller must call Commit or Discard.
-	NewTxnContext(ctx context.Context) *TxnContext
-
-	// InTxn returns a txn-scoped Client whose entire surface — reads, writes,
-	// LoadOrStore, and LoadAndDelete — routes through tx instead of a fresh
-	// read-only or commit-now transaction. Reads join tx's read-set; writes
-	// stage on tx and land only when tx.Commit is called. Every staged write
-	// runs the same defaults, validation, and unique-error translation as the
-	// single-shot methods. Schema and lifecycle operations (UpdateSchema,
-	// DropAll, Close, ...) are non-transactional and operate on the underlying
-	// client unchanged. The passed tx must have been created by this client's
-	// NewTxnContext.
+	// InTxn returns the transaction-scoped client for tx — the curated
+	// ClientTxn whose reads join tx's read-set and whose writes stage on tx,
+	// landing only when tx.Commit is called. Every staged write runs the
+	// same defaults, validation, and unique-error translation as the
+	// single-shot methods. The passed tx must have been created by this
+	// client's NewTxn.
 	//
-	// Embedding note: unlike single-shot Insert/Upsert/Update, staged writes do
-	// not inject the dgraph:"embedding" shadow __vec predicates for SimString
-	// fields. A struct written only through a transaction keeps its primary
-	// text but gets no shadow vector until a later single-shot write recomputes
-	// one.
-	InTxn(tx *TxnContext) Client
-
-	// Get retrieves a single object by its UID and populates the provided object.
-	// The object parameter must be a pointer to a struct.
-	Get(context.Context, any, string) error
-
-	// Query creates a new query builder for retrieving data from the database.
-	// Returns a *dgman.Query that can be further refined with filters, pagination, etc.
-	Query(context.Context, any) *dgman.Query
-
-	// Delete removes objects with the specified UIDs from the database.
-	Delete(context.Context, []string) error
+	// Embedding note: unlike single-shot Insert/Upsert/Update, staged writes
+	// do not inject the dgraph:"embedding" shadow __vec predicates for
+	// SimString fields. A struct written only through a transaction keeps
+	// its primary text but gets no shadow vector until a later single-shot
+	// write recomputes one.
+	InTxn(tx *Txn) *ClientTxn
 
 	// Close releases all resources used by the client.
 	// It should be called when the client is no longer needed.
@@ -119,11 +77,6 @@ type Client interface {
 
 	// DropData removes all data from the database but keeps the schema intact.
 	DropData(context.Context) error
-
-	// QueryRaw executes a raw Dgraph query with optional query variables.
-	// The `query` parameter is the Dgraph query string.
-	// The `vars` parameter is a map of variable names to their values, used to parameterize the query.
-	QueryRaw(context.Context, string, map[string]string) ([]byte, error)
 
 	// DgraphClient returns a gRPC Dgraph client from the connection pool and a cleanup function.
 	// The cleanup function must be called when finished with the client to return it to the pool.
@@ -169,7 +122,7 @@ type SelfValidator interface {
 
 // Defaulter lets a model populate default field values before a write.
 // dgdao calls ApplyDefaults on the model in Insert, Upsert, Update, and
-// LoadOrStore, before validation, so a defaulted field can satisfy a
+// GetOrInsert, before validation, so a defaulted field can satisfy a
 // validate:"required" rule. Implementations set a field only when it is
 // the zero value, except monotonic fields set on every write.
 type Defaulter interface {
@@ -532,7 +485,7 @@ type client struct {
 	options clientOptions
 	pool    *clientPool
 	logger  logr.Logger
-	// consumeMu serializes LoadAndDelete's read-then-delete critical section so
+	// consumeMu serializes GetAndDelete's read-then-delete critical section so
 	// exactly one in-process caller consumes a given node. The client value is
 	// copied (value receivers, cached by value in clientMap), so the mutex is a
 	// pointer shared across every copy that shares this client's connection.
@@ -714,30 +667,12 @@ func (c client) validateOne(ctx context.Context, val reflect.Value) error {
 // Insert implements inserting an object or slice of objects in the database.
 // Passed object must be a pointer to a struct with appropriate dgraph tags.
 func (c client) Insert(ctx context.Context, obj any) error {
-	obj = UnwrapSchema(obj)
+	obj = AsRecord(obj)
 	// Apply defaults before validation, so a defaulted field can satisfy a
 	// validate:"required" rule.
 	if err := c.applyDefaults(ctx, obj); err != nil {
 		return err
 	}
-	// Validate struct before insertion
-	if err := c.validateStruct(ctx, obj); err != nil {
-		return err
-	}
-
-	return c.process(ctx, obj, "Insert", func(tx *dgman.TxnContext, obj any) ([]string, error) {
-		return tx.MutateBasic(obj)
-	})
-}
-
-// InsertRaw adds a new object or slice of objects to the database.
-// The object must be a pointer to a struct with appropriate dgraph tags.
-// The `UID` field for any objects must be set using the Dgraph blank node
-// prefix concept (e.g. "_:user1") to allow the engine to generate a UID for the object.
-//
-// Deprecated: InsertRaw is now identical to Insert. Use Insert instead.
-func (c client) InsertRaw(ctx context.Context, obj any) error {
-	obj = UnwrapSchema(obj)
 	// Validate struct before insertion
 	if err := c.validateStruct(ctx, obj); err != nil {
 		return err
@@ -753,7 +688,7 @@ func (c client) InsertRaw(ctx context.Context, obj any) error {
 // to be used for upserting. If none are specified, the first predicate with the `upsert` tag
 // will be used.
 func (c client) Upsert(ctx context.Context, obj any, predicates ...string) error {
-	obj = UnwrapSchema(obj)
+	obj = AsRecord(obj)
 	// Apply defaults before validation, so a defaulted field can satisfy a
 	// validate:"required" rule.
 	if err := c.applyDefaults(ctx, obj); err != nil {
@@ -769,14 +704,18 @@ func (c client) Upsert(ctx context.Context, obj any, predicates ...string) error
 	})
 }
 
-// LoadOrStore stores obj only if no node already matches the upsert predicates,
-// reporting whether one already existed (loaded == true). Built on dgman
-// MutateOrGet, which returns the UIDs of newly created nodes only: an empty
-// result means an existing node matched, and obj is populated with its fields.
-// With no predicates, the first field tagged dgraph:"upsert" is used.
-func (c client) LoadOrStore(ctx context.Context, obj any, predicates ...string) (loaded bool, err error) {
-	obj = UnwrapSchema(obj)
-	// Reject nil / non-pointer input up front, as LoadAndDelete and Get do:
+// GetOrInsert atomically gets the node matching the upsert predicates, or
+// inserts obj when none exists, reporting loaded=true when an existing node
+// matched (obj is then populated from it). Concurrent callers racing on the
+// same key elect a single winner: exactly one inserts; the rest load the
+// winner's record. Use it for idempotent creation — "ensure this record
+// exists". Built on dgman MutateOrGet, which returns the UIDs of newly
+// created nodes only: an empty result means an existing node matched. With no
+// predicates, the first field tagged dgraph:"upsert" is used.
+// (cf. sync.Map.LoadOrStore)
+func (c client) GetOrInsert(ctx context.Context, obj any, predicates ...string) (loaded bool, err error) {
+	obj = AsRecord(obj)
+	// Reject nil / non-pointer input up front, as GetAndDelete and Get do:
 	// validateStruct is a no-op when no validator is configured, so without this
 	// a typed nil or non-pointer would reach MutateOrGet and panic or silently
 	// fail to hydrate on the loaded=true path.
@@ -849,7 +788,7 @@ func firstUpsertPredicate(obj any) string {
 }
 
 // isValidPredicateName reports whether pred is safe to concatenate into a DQL
-// filter. LoadAndDelete builds "eq(<pred>, $1)" by string concatenation; the key
+// filter. GetAndDelete builds "eq(<pred>, $1)" by string concatenation; the key
 // value is parameterized, but the predicate name is not, so a name containing DQL
 // metacharacters (parentheses, commas, whitespace, quotes, angle brackets, ...)
 // could corrupt or inject the query. Dgraph predicate names are plain identifiers
@@ -872,7 +811,7 @@ func isValidPredicateName(pred string) bool {
 	return true
 }
 
-// zeroValue resets the value pointed to by obj to its zero value. LoadAndDelete
+// zeroValue resets the value pointed to by obj to its zero value. GetAndDelete
 // promises obj is left zero when it returns loaded=false, but tx.Get hydrates obj
 // on a read whose commit may then abort and retry into not-found; without this
 // reset the caller would observe stale data from the aborted attempt (or their
@@ -895,7 +834,7 @@ func uidOf(obj any) string {
 	}
 	// A nil pointer dereferences to an invalid Value and a non-struct has no
 	// fields; FieldByName would panic on either, so guard as firstUpsertPredicate
-	// does. (LoadAndDelete already rejects nil via checkPointer; this is
+	// does. (GetAndDelete already rejects nil via checkPointer; this is
 	// defense-in-depth for any other caller.)
 	if !v.IsValid() || v.Kind() != reflect.Struct {
 		return ""
@@ -907,15 +846,18 @@ func uidOf(obj any) string {
 	return ""
 }
 
-// LoadAndDelete atomically reads the node whose key predicate equals key into
+// GetAndDelete atomically reads the node whose key predicate equals key into
 // obj and deletes it, returning loaded=false (and leaving obj zero) when no
-// node matched. The read and delete share one transaction with no CommitNow,
-// so two concurrent callers conflict on commit: exactly one wins (loaded=true),
-// the loser aborts and retries into not-found (loaded=false). This reproduces
-// PostgreSQL's DELETE … RETURNING. With no predicates, the first dgraph:"upsert"
-// field is used.
-func (c client) LoadAndDelete(ctx context.Context, obj any, key any, predicates ...string) (loaded bool, err error) {
-	obj = UnwrapSchema(obj)
+// node matched. Concurrent callers racing on the same key elect a single
+// winner: the read and delete share one transaction with no CommitNow, so
+// exactly one caller wins (loaded=true) and the loser aborts and retries into
+// not-found (loaded=false). Use it to consume single-use records — OAuth2
+// state and authorization codes, JTI replay protection — where the read must
+// also invalidate; this reproduces PostgreSQL's DELETE … RETURNING. With no
+// predicates, the first dgraph:"upsert" field is used.
+// (cf. sync.Map.LoadAndDelete)
+func (c client) GetAndDelete(ctx context.Context, obj any, key any, predicates ...string) (loaded bool, err error) {
+	obj = AsRecord(obj)
 	if err := checkPointer(obj); err != nil {
 		return false, err
 	}
@@ -927,14 +869,14 @@ func (c client) LoadAndDelete(ctx context.Context, obj any, key any, predicates 
 		pred = firstUpsertPredicate(obj)
 	}
 	if pred == "" {
-		return false, fmt.Errorf("LoadAndDelete: no key predicate (pass one or tag a field dgraph:\"upsert\")")
+		return false, fmt.Errorf("GetAndDelete: no key predicate (pass one or tag a field dgraph:\"upsert\")")
 	}
 	// The key value below is parameterized ($1), but the predicate name is
 	// concatenated straight into the DQL filter, so a name carrying DQL
 	// metacharacters could corrupt or inject the query. Reject anything that is
 	// not a plain Dgraph predicate identifier before it reaches the filter.
 	if !isValidPredicateName(pred) {
-		return false, fmt.Errorf("LoadAndDelete: invalid key predicate %q (allowed: letters, digits, '_', '.', '-')", pred)
+		return false, fmt.Errorf("GetAndDelete: invalid key predicate %q (allowed: letters, digits, '_', '.', '-')", pred)
 	}
 
 	dgClient, err := c.pool.get()
@@ -988,7 +930,7 @@ func (c client) LoadAndDelete(ctx context.Context, obj any, key any, predicates 
 			// -- reporting loaded=false would silently skip a matched node, so
 			// surface it as an error instead.
 			_ = tx.Discard()
-			return false, fmt.Errorf("LoadAndDelete: matched a node but read no UID; the model needs a string UID field")
+			return false, fmt.Errorf("GetAndDelete: matched a node but read no UID; the model needs a string UID field")
 		}
 
 		if delErr := tx.DeleteNode(uid); delErr != nil {
@@ -1027,7 +969,7 @@ func isAbortedErr(err error) bool {
 // Update implements updating an existing object in the database.
 // Passed object must be a pointer to a struct.
 func (c client) Update(ctx context.Context, obj any) error {
-	obj = UnwrapSchema(obj)
+	obj = AsRecord(obj)
 	// Apply defaults before validation, so a defaulted field can satisfy a
 	// validate:"required" rule.
 	if err := c.applyDefaults(ctx, obj); err != nil {
@@ -1059,7 +1001,7 @@ func (c client) Delete(ctx context.Context, uids []string) error {
 // Get implements retrieving a single object by its UID.
 // Passed object must be a pointer to a struct.
 func (c client) Get(ctx context.Context, obj any, uid string) error {
-	obj = UnwrapSchema(obj)
+	obj = AsRecord(obj)
 	err := checkPointer(obj)
 	if err != nil {
 		return err
@@ -1078,7 +1020,7 @@ func (c client) Get(ctx context.Context, obj any, uid string) error {
 // Returns a *dgman.Query that can be further refined with filters, pagination, etc.
 // The returned query will be limited to the maximum number of edges specified in the options.
 func (c client) Query(ctx context.Context, model any) *dgman.Query {
-	model = UnwrapSchema(model)
+	model = AsRecord(model)
 	client, err := c.pool.get()
 	if err != nil {
 		return nil
@@ -1108,7 +1050,7 @@ func (c client) AlterSchema(ctx context.Context, schema string) error {
 // corresponding shadow float32vector predicates (<field>__vec) are also registered.
 func (c client) UpdateSchema(ctx context.Context, obj ...any) error {
 	for i := range obj {
-		obj[i] = UnwrapSchema(obj[i])
+		obj[i] = AsRecord(obj[i])
 	}
 	dgClient, err := c.pool.get()
 	if err != nil {

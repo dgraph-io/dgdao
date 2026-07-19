@@ -14,22 +14,22 @@ import (
 )
 
 // studioRecord is a schema-defining record (implements dg.Schema). studioWrapper
-// wraps it and exposes Unwrap, exactly as a dgdao-gen wrapper would.
+// wraps it and exposes Record, exactly as a dgdao-gen entity would.
 type studioRecord struct {
 	UID   string   `json:"uid,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`
 	Name  string   `json:"name,omitempty" dgraph:"index=exact"`
 }
 
-func (s *studioRecord) SchemaTypeName() string { return "studioRecord" }
+func (s *studioRecord) RecordTypeName() string { return "studioRecord" }
 
 type studioWrapper struct{ inner *studioRecord }
 
-func (w *studioWrapper) Unwrap() *studioRecord { return w.inner }
+func (w *studioWrapper) Record() *studioRecord { return w.inner }
 
 // TestClientUnwrapsWrapperThroughRealMutation exercises the real client path,
-// not UnwrapSchema in isolation: it inserts a wrapper and reads it back. If a
-// mutation method stopped calling UnwrapSchema, the wrapper (which has no usable
+// not AsRecord in isolation: it inserts a wrapper and reads it back. If a
+// mutation method stopped calling AsRecord, the wrapper (which has no usable
 // dgraph fields of its own) would not persist Name and the inner UID would stay
 // empty — so this test fails on that regression.
 func TestClientUnwrapsWrapperThroughRealMutation(t *testing.T) {
@@ -52,7 +52,7 @@ func TestClientUnwrapsWrapperThroughRealMutation(t *testing.T) {
 
 // TestClientUnwrapsWrapperSliceThroughRealMutation covers the batch path:
 // Insert accepts "an object or slice of objects", so a []*wrapper must have
-// each element unwrapped. Before UnwrapSchema mapped over slices, dgman
+// each element unwrapped. Before AsRecord mapped over slices, dgman
 // reflected over the wrappers and failed with "cannot set uid/", persisting
 // nothing; now each inner record is inserted and receives a UID.
 func TestClientUnwrapsWrapperSliceThroughRealMutation(t *testing.T) {

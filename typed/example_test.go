@@ -34,7 +34,7 @@ func ExampleClient() {
 	ctx := context.Background()
 
 	alice := &Person{Name: "Alice", Age: 30}
-	if err := people.Add(ctx, alice); err != nil { // Add writes the new UID back into alice.
+	if err := people.Insert(ctx, alice); err != nil { // Add writes the new UID back into alice.
 		panic(err)
 	}
 

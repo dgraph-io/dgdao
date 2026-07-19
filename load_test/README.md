@@ -159,23 +159,6 @@ go test -v -run=TestDgdaoUnthrottledBenchmark ./load_test -timeout=5m
 BENCHMARK_DURATION=10m go test -v -run=TestDgdaoUnthrottledBenchmark ./load_test -timeout=15m
 ```
 
-#### Using InsertRaw Mode (High-Performance Inserts)
-
-The unthrottled benchmark supports a special `RAW_INSERT` mode that uses the `InsertRaw` function
-for write operations. This bypasses unique checks and uses direct mutation to the Dgraph engine
-which can result in significantly higher insert throughput:
-
-```bash
-RAW_INSERT=1 go test -v -run=TestDgdaoUnthrottledBenchmark ./load_test -timeout=5m
-```
-
-**Note**: `InsertRaw` is only available for local (file-based) dgdao instances. When enabled:
-
-- Write operations use `client.InsertRaw()` instead of `client.Insert()`
-- UIDs are pre-assigned using Dgraph's blank node format (`_:entity-<id>`)
-- Unique constraint checks are skipped for maximum performance
-- Other operations (update, delete, query) continue to work normally
-
 ### Unthrottled Benchmark Configuration
 
 The benchmark can be configured by modifying `DefaultUnthrottledConfig()` in the code:

@@ -124,12 +124,6 @@ func runDgdaoUnthrottled(t *testing.T, config UnthrottledConfig) {
 	t.Logf("Workers: Write=%d, Update=%d, Delete=%d, Query=%d",
 		config.NumWriteWorkers, config.NumUpdateWorkers, config.NumDeleteWorkers, config.NumQueryWorkers)
 
-	// Check if RAW_INSERT mode is enabled
-	useRawInsert := os.Getenv("RAW_INSERT") != ""
-	if useRawInsert {
-		t.Logf("Using InsertRaw mode")
-	}
-
 	// Start write workers
 	for i := 0; i < config.NumWriteWorkers; i++ {
 		wg.Add(1)
@@ -148,19 +142,10 @@ func runDgdaoUnthrottled(t *testing.T, config UnthrottledConfig) {
 					for i := 0; i < config.BatchSize; i++ {
 						id := int(entityCounter.Add(1))
 						entities[i] = generateEntity(id)
-						// Set UID to blank node format when using InsertRaw
-						if useRawInsert {
-							entities[i].UID = fmt.Sprintf("_:entity-%d", id)
-						}
 					}
 
 					start := time.Now()
-					var err error
-					if useRawInsert {
-						err = client.InsertRaw(ctx, entities)
-					} else {
-						err = client.Insert(ctx, entities)
-					}
+					err := client.Insert(ctx, entities)
 					duration := time.Since(start)
 
 					if err == nil {

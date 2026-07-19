@@ -575,15 +575,16 @@ with language-specific analyzers, geolocation queries, and more. The ability to 
 Dgraph client gives you the full power of Dgraph's query language while still benefiting from
 dgdao's simplified client interface and schema management.
 
-## Atomic Operations (`LoadOrStore` and `LoadAndDelete`)
+## Atomic Operations (`GetOrInsert` and `GetAndDelete`)
 
-Two key-keyed operations give you atomic insert-if-absent and read-and-consume semantics, named
-after their `sync.Map` counterparts. Both key off an upsert predicate — either one you pass
-explicitly or the first field tagged `dgraph:"upsert"`.
+Two key-keyed operations give you atomic insert-if-absent (`GetOrInsert`) and read-and-consume
+(`GetAndDelete`) semantics — compare their `sync.Map` ancestors `LoadOrStore` and `LoadAndDelete`.
+Both key off an upsert predicate — either one you pass explicitly or the first field tagged
+`dgraph:"upsert"`.
 
-### LoadOrStore
+### GetOrInsert
 
-`LoadOrStore` stores a node only if none already matches the upsert predicate, reporting whether one
+`GetOrInsert` stores a node only if none already matches the upsert predicate, reporting whether one
 already existed. It is the building block for claiming a one-time token: the first caller stores and
 proceeds, every later caller sees `loaded == true` and is rejected. On the `loaded == true` path the
 passed object is hydrated with the existing record.
@@ -596,15 +597,15 @@ type Token struct {
 }
 
 // false the first time (stored), true thereafter (an existing node matched).
-loaded, err := client.LoadOrStore(ctx, &Token{JTI: "abc123"}, "jti")
+loaded, err := client.GetOrInsert(ctx, &Token{JTI: "abc123"}, "jti")
 if err != nil {
-    log.Fatalf("LoadOrStore failed: %v", err)
+    log.Fatalf("GetOrInsert failed: %v", err)
 }
 ```
 
-### LoadAndDelete
+### GetAndDelete
 
-`LoadAndDelete` atomically reads a node and deletes it, electing a single winner under concurrency:
+`GetAndDelete` atomically reads a node and deletes it, electing a single winner under concurrency:
 exactly one caller gets `loaded == true` with the record hydrated, the rest get `loaded == false`.
 The read and delete share one transaction, so concurrent callers conflict on commit — the loser
 aborts and retries into not-found. Use it to consume a one-shot value such as a nonce, a pending
@@ -612,9 +613,9 @@ job, or a single-use code.
 
 ```go
 var got Token
-loaded, err := client.LoadAndDelete(ctx, &got, "abc123", "jti")
+loaded, err := client.GetAndDelete(ctx, &got, "abc123", "jti")
 if err != nil {
-    log.Fatalf("LoadAndDelete failed: %v", err)
+    log.Fatalf("GetAndDelete failed: %v", err)
 }
 if loaded {
     fmt.Println("consumed", got.JTI)
@@ -624,18 +625,18 @@ if loaded {
 Both operations are also available on the typed `Client[T]`, returning the record directly rather
 than hydrating a passed pointer.
 
-## Deferred-Commit Transactions (`NewTxnContext` and `InTxn`)
+## Deferred-Commit Transactions (`NewTxn` and `InTxn`)
 
 `Insert`, `Upsert`, and `Update` each commit as soon as they're called, so none of them can group
-several mutations into one atomic write. `NewTxnContext` opens a read-write transaction, and
-`client.InTxn(tx)` returns a `Client` whose entire surface — reads, writes, `LoadOrStore`,
-`LoadAndDelete` — runs on that transaction. Reads join its read-set, writes stage, and nothing lands
-until you call `Commit`.
+several mutations into one atomic write. `NewTxn` opens a read-write transaction, and
+`client.InTxn(tx)` returns a `*ClientTxn` — the curated record data-ops surface (reads, writes,
+`GetOrInsert`, `GetAndDelete`) scoped to that transaction. Reads join its read-set, writes stage,
+and nothing lands until you call `Commit`.
 
 Two handles cooperate:
 
-- `tx` (the `TxnContext`) carries the transaction's lifecycle (`Commit`, `Discard`) and its
-  graph-primitive deletes (`DeleteEdge`, `DeleteNode`, `DeletePredicate`).
+- `tx` (the `Txn`) carries the transaction's lifecycle (`Commit`, `Discard`) and its graph-primitive
+  deletes (`DeleteEdge`, `DeleteNode`, `DeletePredicate`).
 - `client.InTxn(tx)` is the validated CRUD surface scoped to `tx` — the untyped read path (`Query`,
   `QueryRaw`, `Get`) as well as the writes. Every staged write runs the same defaulting, validation,
   and unique-constraint error translation (to `*UniqueError`) as its single-shot counterpart, so
@@ -644,7 +645,7 @@ Two handles cooperate:
 ```go
 ctx := context.Background()
 
-tx := client.NewTxnContext(ctx)
+tx := client.NewTxn(ctx)
 defer tx.Discard() // no-op after a successful Commit; guarantees cleanup on every other path
 
 sc := client.InTxn(tx) // validated writes and reads scoped to tx
@@ -671,12 +672,15 @@ if err := tx.Commit(); err != nil {
 ```
 
 Nothing reaches the database until `Commit` succeeds; `Discard` abandons every staged mutation
-instead. Call `Commit` or `Discard` exactly once. Deferring `Discard` immediately after
-`NewTxnContext`, as in the example, is the safe default: it is a no-op once `Commit` has succeeded,
-but still returns the pooled connection to the pool on any error or panic path. Schema and lifecycle
-operations reached through the scoped client (`UpdateSchema`, `DropAll`, `Close`, ...) are
-non-transactional and run on the underlying client unchanged, because Dgraph `Alter` is not part of
-a transaction.
+instead. Call `Commit` or `Discard` exactly once. Deferring `Discard` immediately after `NewTxn`, as
+in the example, is the safe default: it is a no-op once `Commit` has succeeded, but still returns
+the pooled connection to the pool on any error or panic path.
+
+A `ClientTxn` carries no connection lifecycle and no transaction entry: `Close`, `WithRetry`, schema
+and drop operations, `NewTxn`, and `InTxn` do not exist on it, so a transaction-scoped value cannot
+close the shared pool or open a transaction within a transaction. Both the full `Client` and
+`*ClientTxn` satisfy the narrow `ClientCore` interface — write code against `ClientCore` when it
+should run unchanged inside or outside a transaction.
 
 ### Typed transactions and guarded reads
 
@@ -686,7 +690,7 @@ query resolves its edge-match pre-pass and its data block against one transactio
 concurrent edge change aborts the transaction rather than slipping between the read and the delete.
 
 ```go
-tx := client.NewTxnContext(ctx)
+tx := client.NewTxn(ctx)
 defer tx.Discard()
 
 owners := typed.NewClient[Owner](client).InTxn(tx)
@@ -793,7 +797,7 @@ if admin == nil {
     log.Fatal("no admin matched") // First returns nil when nothing matched
 }
 
-// Add, Update, and Upsert take *User; Get and Delete are keyed by a UID string (Get returns *User).
+// Insert, Update, and Upsert take *User; Get and Delete are keyed by a UID string (Get returns *User).
 got, err := users.Get(ctx, admin.UID)
 ```
 

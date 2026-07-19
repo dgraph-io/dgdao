@@ -96,7 +96,7 @@ func TestMultiQueryExecuteReturnsPerBlockResults(t *testing.T) {
 		{Name: "gear", Qty: 5},
 		{Name: "bolt", Qty: 10},
 	} {
-		if err := c.Add(ctx, w); err != nil {
+		if err := c.Insert(ctx, w); err != nil {
 			t.Fatalf("Add %s: %v", w.Name, err)
 		}
 	}
@@ -152,7 +152,7 @@ func TestMultiQueryExecuteRemapsPredicateKeys(t *testing.T) {
 		{Name: "alpha", Qty: 1},
 		{Name: "beta", Qty: 2},
 	} {
-		if err := c.Add(ctx, w); err != nil {
+		if err := c.Insert(ctx, w); err != nil {
 			t.Fatalf("Add %s: %v", w.Name, err)
 		}
 	}
@@ -198,7 +198,7 @@ func TestMultiQueryExecuteRemapsNestedPredicateKeys(t *testing.T) {
 	c := typed.NewClient[nestedParent](conn)
 
 	p := &nestedParent{Name: "root", Children: []*nestedChild{{Label: "leaf"}}}
-	if err := c.Add(ctx, p); err != nil {
+	if err := c.Insert(ctx, p); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 

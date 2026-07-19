@@ -13,7 +13,7 @@ import (
 )
 
 // Actor is a schema-defining record. Implementing dg.Schema (a single
-// SchemaTypeName method) marks it as a generated schema type; code generators
+// RecordTypeName method) marks it as a generated schema type; code generators
 // such as dgdao-gen emit this method.
 type Actor struct {
 	UID   string   `json:"uid,omitempty"`
@@ -21,15 +21,15 @@ type Actor struct {
 	Name  string   `json:"name,omitempty" dgraph:"index=exact"`
 }
 
-func (a *Actor) SchemaTypeName() string { return "Actor" }
+func (a *Actor) RecordTypeName() string { return "Actor" }
 
 // ActorBuilder is a wrapper around Actor — the shape a generated fluent builder
-// or domain wrapper takes. Exposing Unwrap lets the dgdao client route the
+// or domain wrapper takes. Exposing Record lets the dgdao client route the
 // wrapper to its backing record, so the wrapper can be passed straight to
 // Insert/Update/Get without the caller reaching for the inner value.
 type ActorBuilder struct{ actor *Actor }
 
-func (b *ActorBuilder) Unwrap() *Actor { return b.actor }
+func (b *ActorBuilder) Record() *Actor { return b.actor }
 
 // ExampleSchema shows the wrapper pattern: the client unwraps an ActorBuilder
 // to its Actor before persisting, so generated wrapper types work transparently
