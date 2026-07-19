@@ -30,11 +30,11 @@ func newTypedConn(t *testing.T) dgdao.Client {
 	return conn
 }
 
-func TestTypedLoadOrStore(t *testing.T) {
+func TestTypedGetOrInsert(t *testing.T) {
 	c := typed.NewClient[jti](newTypedConn(t))
 	ctx := context.Background()
 
-	rec, loaded, err := c.LoadOrStore(ctx, &jti{JTI: "abc"}, "jti")
+	rec, loaded, err := c.GetOrInsert(ctx, &jti{JTI: "abc"}, "jti")
 	if err != nil {
 		t.Fatalf("first: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestTypedLoadOrStore(t *testing.T) {
 		t.Fatal("first: want a UID assigned")
 	}
 
-	rec2, loaded, err := c.LoadOrStore(ctx, &jti{JTI: "abc"}, "jti")
+	rec2, loaded, err := c.GetOrInsert(ctx, &jti{JTI: "abc"}, "jti")
 	if err != nil {
 		t.Fatalf("second: %v", err)
 	}
@@ -66,17 +66,17 @@ type state struct {
 	Secret string   `json:"secret,omitempty"`
 }
 
-func TestTypedLoadAndDelete(t *testing.T) {
+func TestTypedGetAndDelete(t *testing.T) {
 	c := typed.NewClient[state](newTypedConn(t))
 	ctx := context.Background()
 
-	if err := c.Add(ctx, &state{State: "s1", Secret: "shh"}); err != nil {
+	if err := c.Insert(ctx, &state{State: "s1", Secret: "shh"}); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 
-	rec, loaded, err := c.LoadAndDelete(ctx, "s1", "state")
+	rec, loaded, err := c.GetAndDelete(ctx, "s1", "state")
 	if err != nil {
-		t.Fatalf("LoadAndDelete: %v", err)
+		t.Fatalf("GetAndDelete: %v", err)
 	}
 	if !loaded {
 		t.Fatal("first: want loaded=true")
@@ -85,7 +85,7 @@ func TestTypedLoadAndDelete(t *testing.T) {
 		t.Fatalf("want secret %q, got %q", "shh", rec.Secret)
 	}
 
-	rec, loaded, err = c.LoadAndDelete(ctx, "s1", "state")
+	rec, loaded, err = c.GetAndDelete(ctx, "s1", "state")
 	if err != nil {
 		t.Fatalf("second: %v", err)
 	}
@@ -94,10 +94,10 @@ func TestTypedLoadAndDelete(t *testing.T) {
 	}
 }
 
-func TestLoadAndDeleteSingleWinner(t *testing.T) {
+func TestGetAndDeleteSingleWinner(t *testing.T) {
 	c := typed.NewClient[state](newTypedConn(t))
 	ctx := context.Background()
-	if err := c.Add(ctx, &state{State: "race", Secret: "one"}); err != nil {
+	if err := c.Insert(ctx, &state{State: "race", Secret: "one"}); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 
@@ -108,7 +108,7 @@ func TestLoadAndDeleteSingleWinner(t *testing.T) {
 	for i := 0; i < racers; i++ {
 		go func(i int) {
 			defer wg.Done()
-			_, loaded, err := c.LoadAndDelete(ctx, "race", "state")
+			_, loaded, err := c.GetAndDelete(ctx, "race", "state")
 			if err != nil {
 				t.Errorf("racer %d: %v", i, err)
 				return

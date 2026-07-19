@@ -13,7 +13,7 @@ import (
 )
 
 // Token is keyed by a unique jti predicate. The upsert+unique tags let
-// LoadOrStore atomically insert-if-absent on that key.
+// GetOrInsert atomically insert-if-absent on that key.
 type Token struct {
 	UID   string   `json:"uid,omitempty"`
 	DType []string `json:"dgraph.type,omitempty"`
@@ -27,12 +27,12 @@ type Token struct {
 //
 // This is the building block for "claim a one-time token": the first caller
 // stores and proceeds, every later caller sees loaded=true and is rejected.
-func ExampleClient_LoadOrStore() {
+func ExampleClient_GetOrInsert() {
 	client, _ := dg.NewClient("dgraph://localhost:9080")
 	defer client.Close()
 
 	ctx := context.Background()
-	loaded, err := client.LoadOrStore(ctx, &Token{JTI: "abc123"}, "jti")
+	loaded, err := client.GetOrInsert(ctx, &Token{JTI: "abc123"}, "jti")
 	if err != nil {
 		panic(err)
 	}
@@ -43,13 +43,13 @@ func ExampleClient_LoadOrStore() {
 // single winner under concurrency: exactly one caller gets loaded=true with the
 // record hydrated, the rest get loaded=false. Use it to consume a one-shot
 // value — a nonce, a pending job, a single-use code.
-func ExampleClient_LoadAndDelete() {
+func ExampleClient_GetAndDelete() {
 	client, _ := dg.NewClient("dgraph://localhost:9080")
 	defer client.Close()
 
 	ctx := context.Background()
 	var got Token
-	loaded, err := client.LoadAndDelete(ctx, &got, "abc123", "jti")
+	loaded, err := client.GetAndDelete(ctx, &got, "abc123", "jti")
 	if err != nil {
 		panic(err)
 	}

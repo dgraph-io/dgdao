@@ -75,7 +75,7 @@ func TestQuery_NodesReturnsAll(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
 	for _, n := range []string{"a", "b", "c"} {
-		if err := c.Add(ctx, &widget{Name: n}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: n}); err != nil {
 			t.Fatalf("Add %s: %v", n, err)
 		}
 	}
@@ -93,7 +93,7 @@ func TestQuery_LimitCapsResults(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
 	for i := range 5 {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -110,7 +110,7 @@ func TestQuery_LimitCapsResults(t *testing.T) {
 func TestQuery_FirstReturnsAMatch(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
-	if err := c.Add(ctx, &widget{Name: "only", Qty: 7}); err != nil {
+	if err := c.Insert(ctx, &widget{Name: "only", Qty: 7}); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 
@@ -139,7 +139,7 @@ func TestQuery_FirstNoMatchReturnsNilNil(t *testing.T) {
 func TestQuery_BuilderChainCompilesAndRuns(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
-	if err := c.Add(ctx, &widget{Name: "x", Qty: 1}); err != nil {
+	if err := c.Insert(ctx, &widget{Name: "x", Qty: 1}); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 
@@ -168,7 +168,7 @@ func TestQuery_Filter(t *testing.T) {
 
 	// Insert three widgets with distinct names.
 	for _, name := range []string{"alpha", "beta", "gamma"} {
-		if err := c.Add(ctx, &widget{Name: name}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: name}); err != nil {
 			t.Fatalf("Add %s: %v", name, err)
 		}
 	}
@@ -196,7 +196,7 @@ func TestQuery_FilterAccumulatesWithAnd(t *testing.T) {
 		{Name: "beta", Qty: 9},
 		{Name: "beta", Qty: 1},
 	} {
-		if err := c.Add(ctx, &w); err != nil {
+		if err := c.Insert(ctx, &w); err != nil {
 			t.Fatalf("Add %+v: %v", w, err)
 		}
 	}
@@ -260,7 +260,7 @@ func TestQuery_OrGroup(t *testing.T) {
 		{Name: "beta", Qty: 9},
 		{Name: "gamma", Qty: 1},
 	} {
-		if err := c.Add(ctx, &w); err != nil {
+		if err := c.Insert(ctx, &w); err != nil {
 			t.Fatalf("Add %+v: %v", w, err)
 		}
 	}
@@ -300,7 +300,7 @@ func TestQuery_OrderAscDesc(t *testing.T) {
 	// stable natural ordering cannot hide a missing sort.
 	qtys := []int{30, 10, 50, 20, 40}
 	for i, q := range qtys {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: q}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: q}); err != nil {
 			t.Fatalf("Add widget[%d]: %v", i, err)
 		}
 	}
@@ -343,7 +343,7 @@ func TestQuery_OffsetSkipsResults(t *testing.T) {
 	// Five widgets with distinct, deliberately unsorted Qty values.
 	qtys := []int{40, 10, 50, 20, 30}
 	for i, q := range qtys {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: q}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: q}); err != nil {
 			t.Fatalf("Add widget[%d]: %v", i, err)
 		}
 	}
@@ -367,7 +367,7 @@ func TestQuery_AfterCursor(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 
 	for i := range 5 {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -407,12 +407,12 @@ func TestQuery_CascadeDropsIncompleteNodes(t *testing.T) {
 	// predicate at all.
 	withQty := []int{5, 9, 13}
 	for _, q := range withQty {
-		if err := c.Add(ctx, &widget{Name: "has-qty", Qty: q}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "has-qty", Qty: q}); err != nil {
 			t.Fatalf("Add qty=%d: %v", q, err)
 		}
 	}
 	for i := range 4 {
-		if err := c.Add(ctx, &widget{Name: "no-qty"}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "no-qty"}); err != nil {
 			t.Fatalf("Add no-qty[%d]: %v", i, err)
 		}
 	}
@@ -439,11 +439,11 @@ func TestQuery_FilterOrderLimitOffsetCombined(t *testing.T) {
 
 	// A known set: five "keep" widgets plus a "drop" widget the filter excludes.
 	for _, q := range []int{50, 20, 40, 10, 30} {
-		if err := c.Add(ctx, &widget{Name: "keep", Qty: q}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "keep", Qty: q}); err != nil {
 			t.Fatalf("Add keep qty=%d: %v", q, err)
 		}
 	}
-	if err := c.Add(ctx, &widget{Name: "drop", Qty: 99}); err != nil {
+	if err := c.Insert(ctx, &widget{Name: "drop", Qty: 99}); err != nil {
 		t.Fatalf("Add drop: %v", err)
 	}
 
@@ -471,7 +471,7 @@ func TestQuery_FirstOnMultipleRows(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 
 	for _, q := range []int{30, 10, 20} {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: q}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: q}); err != nil {
 			t.Fatalf("Add qty=%d: %v", q, err)
 		}
 	}
@@ -540,7 +540,7 @@ func TestQuery_TerminalRunsTwice(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 
 	for _, n := range []string{"a", "b", "c"} {
-		if err := c.Add(ctx, &widget{Name: n}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: n}); err != nil {
 			t.Fatalf("Add %s: %v", n, err)
 		}
 	}
@@ -601,7 +601,7 @@ func TestQuery_BuilderAliasesAndAccumulates(t *testing.T) {
 func TestQuery_RawRoundTrips(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
-	if err := c.Add(ctx, &widget{Name: "raw-target", Qty: 7}); err != nil {
+	if err := c.Insert(ctx, &widget{Name: "raw-target", Qty: 7}); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 
@@ -631,7 +631,7 @@ func TestQuery_SingleQueryPerTerminal(t *testing.T) {
 	c := typed.NewClient[widget](newCountingConn(t, &queriesExecuted))
 
 	for i := range 2 {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -666,7 +666,7 @@ func TestIterNodes_StreamsAll(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 	const n = 125 // > defaultPageSize (50): forces multiple pages
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -690,7 +690,7 @@ func TestIterNodes_StopsOnConsumerBreak(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 	const n = 125
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -729,7 +729,7 @@ func TestIterNodes_RespectsLimit(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 	const n = 100
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -750,7 +750,7 @@ func TestIterNodes_LimitExceedsResultSet(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 	const n = 30
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -773,7 +773,7 @@ func TestIterNodes_RespectsOffset(t *testing.T) {
 	// keeping OrderAsc("qty") a true total order over all records.
 	const n = 10
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i + 1}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i + 1}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -801,7 +801,7 @@ func TestIterNodes_RespectsOffsetAndLimit(t *testing.T) {
 	// OrderAsc("qty") is a strict total order across all 200 records.
 	const n = 200
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i + 1}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i + 1}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -828,7 +828,7 @@ func TestIterNodes_OneQueryPerPage(t *testing.T) {
 	c := typed.NewClient[widget](newCountingConn(t, &queriesExecuted))
 	const n = 125 // ceil(125/50) = 3 page queries
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -858,7 +858,7 @@ func TestIterNodes_OneQueryPerPage(t *testing.T) {
 func TestIterNodes_YieldsErrorAndStops(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
-	if err := c.Add(ctx, &widget{Name: "w", Qty: 1}); err != nil {
+	if err := c.Insert(ctx, &widget{Name: "w", Qty: 1}); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 	// A syntactically invalid @filter (unbalanced parenthesis) makes the page
@@ -886,7 +886,7 @@ func TestQuery_LimitOffsetStillDriveNodes(t *testing.T) {
 	// OrderAsc("qty") is a strict total order across all records.
 	const n = 10
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i + 1}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i + 1}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
@@ -910,7 +910,7 @@ func TestQuery_RootFuncOverridesRoot(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
 	for _, n := range []string{"a", "b", "c"} {
-		if err := c.Add(ctx, &widget{Name: n}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: n}); err != nil {
 			t.Fatalf("Add %s: %v", n, err)
 		}
 	}
@@ -947,7 +947,7 @@ func TestQuery_NameDecodesAfterRename(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
 	for _, n := range []string{"a", "b", "c"} {
-		if err := c.Add(ctx, &widget{Name: n}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: n}); err != nil {
 			t.Fatalf("Add %s: %v", n, err)
 		}
 	}
@@ -1009,7 +1009,7 @@ func TestQuery_VarsParameterizedQuery(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
 	for _, n := range []string{"a", "b", "c"} {
-		if err := c.Add(ctx, &widget{Name: n}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: n}); err != nil {
 			t.Fatalf("Add %s: %v", n, err)
 		}
 	}
@@ -1111,10 +1111,10 @@ func seedOwners(
 	owners := typed.NewClient[owner](conn)
 	for ownerName, petName := range ownerToPet {
 		p := &pet{Name: petName}
-		if err := pets.Add(ctx, p); err != nil {
+		if err := pets.Insert(ctx, p); err != nil {
 			t.Fatalf("Add pet %q: %v", petName, err)
 		}
-		if err := owners.Add(ctx, &owner{Name: ownerName, Pets: []*pet{p}}); err != nil {
+		if err := owners.Insert(ctx, &owner{Name: ownerName, Pets: []*pet{p}}); err != nil {
 			t.Fatalf("Add owner %q: %v", ownerName, err)
 		}
 	}
@@ -1202,13 +1202,13 @@ func TestQuery_WhereEdgePreservesUIDRoot(t *testing.T) {
 	owners := typed.NewClient[owner](conn)
 
 	fido := &pet{Name: "Fido"}
-	if err := pets.Add(ctx, fido); err != nil {
+	if err := pets.Insert(ctx, fido); err != nil {
 		t.Fatalf("Add pet: %v", err)
 	}
 	alice := &owner{Name: "Alice", Pets: []*pet{fido}}
 	carol := &owner{Name: "Carol", Pets: []*pet{fido}}
 	for _, o := range []*owner{alice, carol} {
-		if err := owners.Add(ctx, o); err != nil {
+		if err := owners.Insert(ctx, o); err != nil {
 			t.Fatalf("Add owner %q: %v", o.Name, err)
 		}
 	}
@@ -1238,14 +1238,14 @@ func TestQuery_WhereEdgeMultipleConstraintsAnd(t *testing.T) {
 	// Alice owns both Fido and Rex; Bob owns only Fido.
 	fido, rex := &pet{Name: "Fido"}, &pet{Name: "Rex"}
 	for _, p := range []*pet{fido, rex} {
-		if err := pets.Add(ctx, p); err != nil {
+		if err := pets.Insert(ctx, p); err != nil {
 			t.Fatalf("Add pet %q: %v", p.Name, err)
 		}
 	}
-	if err := owners.Add(ctx, &owner{Name: "Alice", Pets: []*pet{fido, rex}}); err != nil {
+	if err := owners.Insert(ctx, &owner{Name: "Alice", Pets: []*pet{fido, rex}}); err != nil {
 		t.Fatalf("Add Alice: %v", err)
 	}
-	if err := owners.Add(ctx, &owner{Name: "Bob", Pets: []*pet{fido}}); err != nil {
+	if err := owners.Insert(ctx, &owner{Name: "Bob", Pets: []*pet{fido}}); err != nil {
 		t.Fatalf("Add Bob: %v", err)
 	}
 
@@ -1364,7 +1364,7 @@ func TestQuery_UIDRootsAtNode(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 
 	w := &widget{Name: "sprocket", Qty: 3}
-	if err := c.Add(ctx, w); err != nil {
+	if err := c.Insert(ctx, w); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 
@@ -1382,7 +1382,7 @@ func TestQuery_NodesAndCountReturnsTotal(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 
 	for i := 0; i < 3; i++ {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add: %v", err)
 		}
 	}
@@ -1399,7 +1399,7 @@ func TestQuery_NodesAndCountReturnsTotal(t *testing.T) {
 func TestQuery_AllSetsTraversalDepth(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
-	if err := c.Add(ctx, &widget{Name: "deep", Qty: 1}); err != nil {
+	if err := c.Insert(ctx, &widget{Name: "deep", Qty: 1}); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 

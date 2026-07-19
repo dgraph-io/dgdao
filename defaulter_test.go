@@ -68,14 +68,14 @@ func TestDefaulterAppliesBeforeValidateOnUpsert(t *testing.T) {
 	}
 }
 
-func TestDefaulterAppliesBeforeValidateOnLoadOrStore(t *testing.T) {
+func TestDefaulterAppliesBeforeValidateOnGetOrInsert(t *testing.T) {
 	conn := newDefaulterClient(t)
 	ctx := context.Background()
 
 	obj := &defaultedEntity{Key: "loadorstore-1"}
-	loaded, err := conn.LoadOrStore(ctx, obj, "key")
+	loaded, err := conn.GetOrInsert(ctx, obj, "key")
 	if err != nil {
-		t.Fatalf("LoadOrStore: %v", err)
+		t.Fatalf("GetOrInsert: %v", err)
 	}
 	if loaded {
 		t.Fatal("want loaded=false (newly created)")

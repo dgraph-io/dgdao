@@ -40,13 +40,13 @@ func TestInTxn_WritesStageAndCommit(t *testing.T) {
 			defer cleanup()
 			ctx := context.Background()
 
-			// TxnContext does not run autoSchema; establish the txnDoc schema and a
+			// Txn does not run autoSchema; establish the txnDoc schema and a
 			// deletion target with single-shot writes first.
 			require.NoError(t, client.Insert(ctx, &txnDoc{Name: "seed", Note: "seed"}))
 			victim := &txnDoc{Name: "victim", Note: "die"}
 			require.NoError(t, client.Insert(ctx, victim))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 
@@ -101,7 +101,7 @@ func TestInTxn_ReadsRouteThroughTxn(t *testing.T) {
 			seed := &txnDoc{Name: "reader", Note: "payload"}
 			require.NoError(t, client.Insert(ctx, seed))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 
@@ -141,7 +141,7 @@ func TestInTxn_ReadYourWrites(t *testing.T) {
 
 			require.NoError(t, client.Insert(ctx, &txnDoc{Name: "schema-seed"}))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 
@@ -177,7 +177,7 @@ func TestInTxn_ReadDeleteCommitAtomic(t *testing.T) {
 
 			require.NoError(t, client.Insert(ctx, &txnDoc{Name: "target", Note: "guarded"}))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 
@@ -203,12 +203,12 @@ func TestInTxn_ReadDeleteCommitAtomic(t *testing.T) {
 	}
 }
 
-// TestInTxn_LoadOrStore covers both LoadOrStore outcomes inside a txn: the
+// TestInTxn_GetOrInsert covers both GetOrInsert outcomes inside a txn: the
 // create path (no match, loaded=false) and the load path (existing match,
 // loaded=true, obj hydrated from the stored node). MutateOrGet echoes the
 // transaction's timestamp rather than advancing it, so both calls succeed on
 // either backend.
-func TestInTxn_LoadOrStore(t *testing.T) {
+func TestInTxn_GetOrInsert(t *testing.T) {
 	for _, tc := range txnURICases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
@@ -221,22 +221,22 @@ func TestInTxn_LoadOrStore(t *testing.T) {
 
 			require.NoError(t, client.Insert(ctx, &txnDoc{Name: "existing", Note: "original"}))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 
 			// Create path: no node named "fresh" exists yet.
 			fresh := &txnDoc{Name: "fresh", Note: "brand-new"}
-			loaded, err := sc.LoadOrStore(ctx, fresh)
+			loaded, err := sc.GetOrInsert(ctx, fresh)
 			require.NoError(t, err)
-			require.False(t, loaded, "LoadOrStore of an absent key must store, not load")
+			require.False(t, loaded, "GetOrInsert of an absent key must store, not load")
 			require.NotEmpty(t, fresh.UID)
 
 			// Load path: a node named "existing" already exists.
 			dup := &txnDoc{Name: "existing", Note: "ignored"}
-			loaded, err = sc.LoadOrStore(ctx, dup)
+			loaded, err = sc.GetOrInsert(ctx, dup)
 			require.NoError(t, err)
-			require.True(t, loaded, "LoadOrStore of a present key must load, not store")
+			require.True(t, loaded, "GetOrInsert of a present key must load, not store")
 			require.Equal(t, "original", dup.Note, "loaded obj must be hydrated from the stored node")
 
 			require.NoError(t, txn.Commit())
@@ -248,10 +248,10 @@ func TestInTxn_LoadOrStore(t *testing.T) {
 	}
 }
 
-// TestInTxn_LoadAndDelete reads-and-consumes a node inside a txn: the matched
+// TestInTxn_GetAndDelete reads-and-consumes a node inside a txn: the matched
 // node is hydrated into obj and its deletion staged, landing on Commit. A
 // separate transaction confirms a miss returns loaded=false and leaves obj zero.
-func TestInTxn_LoadAndDelete(t *testing.T) {
+func TestInTxn_GetAndDelete(t *testing.T) {
 	for _, tc := range txnURICases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
@@ -264,12 +264,12 @@ func TestInTxn_LoadAndDelete(t *testing.T) {
 
 			require.NoError(t, client.Insert(ctx, &txnDoc{Name: "consume-me", Note: "payload"}))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 
 			var got txnDoc
-			loaded, err := sc.LoadAndDelete(ctx, &got, "consume-me")
+			loaded, err := sc.GetAndDelete(ctx, &got, "consume-me")
 			require.NoError(t, err)
 			require.True(t, loaded, "the seeded node should be consumed")
 			require.Equal(t, "payload", got.Note, "obj must be hydrated with the consumed node")
@@ -281,12 +281,12 @@ func TestInTxn_LoadAndDelete(t *testing.T) {
 			require.Empty(t, remaining, "the consumed node must be gone after commit")
 
 			// A miss in a fresh transaction returns loaded=false and zeroes obj.
-			txn2 := client.NewTxnContext(ctx)
+			txn2 := client.NewTxn(ctx)
 			defer txn2.Discard()
 			sc2 := client.InTxn(txn2)
 
 			miss := txnDoc{Name: "pre-populated"}
-			loaded, err = sc2.LoadAndDelete(ctx, &miss, "does-not-exist")
+			loaded, err = sc2.GetAndDelete(ctx, &miss, "does-not-exist")
 			require.NoError(t, err)
 			require.False(t, loaded, "a miss must report loaded=false")
 			require.Empty(t, miss.Name, "obj must be zeroed on a miss")
@@ -311,7 +311,7 @@ func TestInTxn_ValidationAndUniqueError(t *testing.T) {
 
 			require.NoError(t, client.Insert(ctx, &txnUser{Name: "taken", Email: "a@example.com"}))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 
@@ -326,6 +326,40 @@ func TestInTxn_ValidationAndUniqueError(t *testing.T) {
 			var uniqueErr *dg.UniqueError
 			require.True(t, errors.As(err, &uniqueErr), "expected a typed *UniqueError, got %v", err)
 			require.Equal(t, "name", uniqueErr.Field)
+		})
+	}
+}
+
+// TestInTxn_PackageLevelConstructor proves the package-level dgdao.InTxn — the
+// constructor the typed layer uses — produces a ClientTxn bound to the same
+// transaction as Client.InTxn: a write staged through it lands only on Commit,
+// with defaults and validation applied by the originating client.
+func TestInTxn_PackageLevelConstructor(t *testing.T) {
+	for _, tc := range txnURICases(t) {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.skip {
+				t.Skipf("Skipping %s: DGDAO_TEST_ADDR not set", tc.name)
+			}
+
+			client, cleanup := CreateTestClient(t, tc.uri)
+			defer cleanup()
+			ctx := context.Background()
+
+			// Txn does not run autoSchema; establish the txnDoc schema first.
+			require.NoError(t, client.Insert(ctx, &txnDoc{Name: "seed", Note: "seed"}))
+
+			txn := client.NewTxn(ctx)
+			defer txn.Discard()
+			sc := dg.InTxn(txn)
+
+			doc := &txnDoc{Name: "pkg-ctor", Note: "n"}
+			require.NoError(t, sc.Insert(ctx, doc))
+			require.NotEmpty(t, doc.UID, "Insert should populate the UID")
+			require.NoError(t, txn.Commit())
+
+			var got txnDoc
+			require.NoError(t, client.Get(ctx, &got, doc.UID))
+			require.Equal(t, "pkg-ctor", got.Name, "write staged via dgdao.InTxn should land on Commit")
 		})
 	}
 }

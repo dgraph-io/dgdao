@@ -23,13 +23,13 @@ import (
 // Dgraph executes the blocks concurrently on the server side; the entire
 // batch costs one gRPC round-trip.
 type MultiQuery[T any] struct {
-	conn   dgdao.Client
+	conn   dgdao.ClientCore
 	names  []string
 	blocks map[string]*Query[T]
 }
 
 // NewMultiQuery constructs a MultiQuery bound to conn.
-func NewMultiQuery[T any](conn dgdao.Client) *MultiQuery[T] {
+func NewMultiQuery[T any](conn dgdao.ClientCore) *MultiQuery[T] {
 	return &MultiQuery[T]{
 		conn:   conn,
 		blocks: make(map[string]*Query[T]),

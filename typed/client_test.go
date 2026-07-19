@@ -54,7 +54,7 @@ func TestClient_AddPopulatesUIDAndGetReadsBack(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 
 	w := &widget{Name: "sprocket", Qty: 3}
-	if err := c.Add(ctx, w); err != nil {
+	if err := c.Insert(ctx, w); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 	if w.UID == "" {
@@ -75,7 +75,7 @@ func TestClient_Update(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 
 	w := &widget{Name: "gear", Qty: 1}
-	if err := c.Add(ctx, w); err != nil {
+	if err := c.Insert(ctx, w); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 	w.Qty = 99
@@ -97,7 +97,7 @@ func TestClient_Delete(t *testing.T) {
 	c := typed.NewClient[widget](newConn(t))
 
 	w := &widget{Name: "bolt"}
-	if err := c.Add(ctx, w); err != nil {
+	if err := c.Insert(ctx, w); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
 	if err := c.Delete(ctx, w.UID); err != nil {
@@ -108,31 +108,31 @@ func TestClient_Delete(t *testing.T) {
 	}
 }
 
-func TestClient_IterPagesThroughAllRecords(t *testing.T) {
+func TestClient_QueryIterNodesPagesThroughAllRecords(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
 
 	// 125 is deliberately larger than the package's 50-record page size, so
-	// a correct Iter must fetch more than one page.
+	// a correct IterNodes must fetch more than one page.
 	const n = 125
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
 
 	seen := 0
-	for w, err := range c.Iter(ctx) {
+	for w, err := range c.Query(ctx).IterNodes() {
 		if err != nil {
-			t.Fatalf("Iter yielded error: %v", err)
+			t.Fatalf("IterNodes yielded error: %v", err)
 		}
 		if w == nil {
-			t.Fatal("Iter yielded a nil widget")
+			t.Fatal("IterNodes yielded a nil widget")
 		}
 		seen++
 	}
 	if seen != n {
-		t.Fatalf("Iter yielded %d records, want %d", seen, n)
+		t.Fatalf("IterNodes yielded %d records, want %d", seen, n)
 	}
 }
 
@@ -179,24 +179,24 @@ func TestClient_Upsert(t *testing.T) {
 	}
 }
 
-func TestClient_IterStopsOnConsumerBreak(t *testing.T) {
+func TestClient_QueryIterNodesStopsOnConsumerBreak(t *testing.T) {
 	ctx := context.Background()
 	c := typed.NewClient[widget](newConn(t))
 
 	const n = 125
 	for i := range n {
-		if err := c.Add(ctx, &widget{Name: "w", Qty: i}); err != nil {
+		if err := c.Insert(ctx, &widget{Name: "w", Qty: i}); err != nil {
 			t.Fatalf("Add %d: %v", i, err)
 		}
 	}
 
 	seen := 0
-	for w, err := range c.Iter(ctx) {
+	for w, err := range c.Query(ctx).IterNodes() {
 		if err != nil {
-			t.Fatalf("Iter yielded error: %v", err)
+			t.Fatalf("IterNodes yielded error: %v", err)
 		}
 		if w == nil {
-			t.Fatal("Iter yielded a nil widget")
+			t.Fatal("IterNodes yielded a nil widget")
 		}
 		seen++
 		if seen == 10 {
@@ -204,6 +204,6 @@ func TestClient_IterStopsOnConsumerBreak(t *testing.T) {
 		}
 	}
 	if seen != 10 {
-		t.Fatalf("Iter yielded %d records after break at 10, want 10", seen)
+		t.Fatalf("IterNodes yielded %d records after break at 10, want 10", seen)
 	}
 }

@@ -28,28 +28,28 @@ func newConsumeClient(t *testing.T) dgdao.Client {
 	return conn
 }
 
-func TestLoadOrStore(t *testing.T) {
+func TestGetOrInsert(t *testing.T) {
 	conn := newConsumeClient(t)
 	ctx := context.Background()
 
 	first := &consumeJTI{JTI: "abc"}
-	loaded, err := conn.LoadOrStore(ctx, first, "jti")
+	loaded, err := conn.GetOrInsert(ctx, first, "jti")
 	if err != nil {
-		t.Fatalf("first LoadOrStore: %v", err)
+		t.Fatalf("first GetOrInsert: %v", err)
 	}
 	if loaded {
 		t.Fatal("first store: want loaded=false (newly created)")
 	}
 
 	second := &consumeJTI{JTI: "abc"}
-	loaded, err = conn.LoadOrStore(ctx, second, "jti")
+	loaded, err = conn.GetOrInsert(ctx, second, "jti")
 	if err != nil {
-		t.Fatalf("second LoadOrStore: %v", err)
+		t.Fatalf("second GetOrInsert: %v", err)
 	}
 	if !loaded {
 		t.Fatal("second store: want loaded=true (already existed)")
 	}
-	// On the loaded=true path, LoadOrStore must hydrate the passed object with
+	// On the loaded=true path, GetOrInsert must hydrate the passed object with
 	// the existing record. Assert it carries the existing node's UID, so a
 	// regression that returns loaded=true without populating fields is caught.
 	if second.UID == "" {
@@ -67,7 +67,7 @@ type consumeState struct {
 	Secret string   `json:"secret,omitempty"`
 }
 
-func TestLoadAndDelete(t *testing.T) {
+func TestGetAndDelete(t *testing.T) {
 	conn := newConsumeClient(t)
 	ctx := context.Background()
 
@@ -76,9 +76,9 @@ func TestLoadAndDelete(t *testing.T) {
 	}
 
 	var got consumeState
-	loaded, err := conn.LoadAndDelete(ctx, &got, "s1", "state")
+	loaded, err := conn.GetAndDelete(ctx, &got, "s1", "state")
 	if err != nil {
-		t.Fatalf("LoadAndDelete: %v", err)
+		t.Fatalf("GetAndDelete: %v", err)
 	}
 	if !loaded {
 		t.Fatal("first consume: want loaded=true")
@@ -88,20 +88,20 @@ func TestLoadAndDelete(t *testing.T) {
 	}
 
 	var again consumeState
-	loaded, err = conn.LoadAndDelete(ctx, &again, "s1", "state")
+	loaded, err = conn.GetAndDelete(ctx, &again, "s1", "state")
 	if err != nil {
-		t.Fatalf("second LoadAndDelete: %v", err)
+		t.Fatalf("second GetAndDelete: %v", err)
 	}
 	if loaded {
 		t.Fatal("second consume: want loaded=false (already consumed)")
 	}
 }
 
-// LoadAndDelete concatenates the predicate name straight into the DQL filter, so
+// GetAndDelete concatenates the predicate name straight into the DQL filter, so
 // a name carrying DQL metacharacters must be rejected before it reaches the query
 // rather than corrupting or injecting it. The key value is separately
 // parameterized, so only the predicate name is at risk here.
-func TestLoadAndDeleteRejectsInvalidPredicate(t *testing.T) {
+func TestGetAndDeleteRejectsInvalidPredicate(t *testing.T) {
 	conn := newConsumeClient(t)
 	ctx := context.Background()
 
@@ -113,7 +113,7 @@ func TestLoadAndDeleteRejectsInvalidPredicate(t *testing.T) {
 		"state val",          // embedded whitespace
 	} {
 		var got consumeState
-		loaded, err := conn.LoadAndDelete(ctx, &got, "s1", pred)
+		loaded, err := conn.GetAndDelete(ctx, &got, "s1", pred)
 		if err == nil {
 			t.Fatalf("predicate %q: want error, got nil (loaded=%v)", pred, loaded)
 		}
@@ -127,7 +127,7 @@ func TestLoadAndDeleteRejectsInvalidPredicate(t *testing.T) {
 		t.Fatalf("Insert: %v", err)
 	}
 	var got consumeState
-	loaded, err := conn.LoadAndDelete(ctx, &got, "ok", "state")
+	loaded, err := conn.GetAndDelete(ctx, &got, "ok", "state")
 	if err != nil {
 		t.Fatalf("valid predicate: unexpected error: %v", err)
 	}
@@ -139,45 +139,45 @@ func TestLoadAndDeleteRejectsInvalidPredicate(t *testing.T) {
 // A new public API must return errors on nil input rather than panic. A nil
 // interface would panic in reflect.TypeOf(nil).Kind(); a typed nil pointer would
 // pass the pointer-kind check and then panic when uidOf dereferences it.
-func TestLoadAndDeleteRejectsNilObject(t *testing.T) {
+func TestGetAndDeleteRejectsNilObject(t *testing.T) {
 	conn := newConsumeClient(t)
 	ctx := context.Background()
 
-	if _, err := conn.LoadAndDelete(ctx, nil, "s1", "state"); err == nil {
+	if _, err := conn.GetAndDelete(ctx, nil, "s1", "state"); err == nil {
 		t.Fatal("nil interface: want error, got nil")
 	}
-	if _, err := conn.LoadAndDelete(ctx, (*consumeState)(nil), "s1", "state"); err == nil {
+	if _, err := conn.GetAndDelete(ctx, (*consumeState)(nil), "s1", "state"); err == nil {
 		t.Fatal("typed nil pointer: want error, got nil")
 	}
 }
 
-// LoadOrStore validates via checkPointer (validateStruct is a no-op without a
+// GetOrInsert validates via checkPointer (validateStruct is a no-op without a
 // configured validator), so nil and typed-nil input must return an error rather
 // than reaching MutateOrGet and panicking.
-func TestLoadOrStoreRejectsNilObject(t *testing.T) {
+func TestGetOrInsertRejectsNilObject(t *testing.T) {
 	conn := newConsumeClient(t)
 	ctx := context.Background()
 
-	if _, err := conn.LoadOrStore(ctx, nil, "jti"); err == nil {
+	if _, err := conn.GetOrInsert(ctx, nil, "jti"); err == nil {
 		t.Fatal("nil interface: want error, got nil")
 	}
-	if _, err := conn.LoadOrStore(ctx, (*consumeJTI)(nil), "jti"); err == nil {
+	if _, err := conn.GetOrInsert(ctx, (*consumeJTI)(nil), "jti"); err == nil {
 		t.Fatal("typed nil pointer: want error, got nil")
 	}
 }
 
-// LoadAndDelete documents that obj is left zero when loaded=false. A caller may
+// GetAndDelete documents that obj is left zero when loaded=false. A caller may
 // pass a pre-populated struct (and, after a commit-abort retry, a prior Get may
 // have hydrated it), so a not-found consume must reset obj rather than leave
 // stale data behind.
-func TestLoadAndDeleteZeroesObjectWhenNotFound(t *testing.T) {
+func TestGetAndDeleteZeroesObjectWhenNotFound(t *testing.T) {
 	conn := newConsumeClient(t)
 	ctx := context.Background()
 
 	got := consumeState{UID: "0x99", State: "preexisting", Secret: "stale"}
-	loaded, err := conn.LoadAndDelete(ctx, &got, "no-such-key", "state")
+	loaded, err := conn.GetAndDelete(ctx, &got, "no-such-key", "state")
 	if err != nil {
-		t.Fatalf("LoadAndDelete: %v", err)
+		t.Fatalf("GetAndDelete: %v", err)
 	}
 	if loaded {
 		t.Fatal("want loaded=false for a missing key")
@@ -196,9 +196,9 @@ type consumeLowerUID struct {
 }
 
 // When Get matches a node but its UID cannot be read (the model lacks a UID
-// string field), LoadAndDelete must error rather than report loaded=false: the
+// string field), GetAndDelete must error rather than report loaded=false: the
 // node existed and would otherwise be silently skipped instead of consumed.
-func TestLoadAndDeleteErrorsWhenUIDUnreadable(t *testing.T) {
+func TestGetAndDeleteErrorsWhenUIDUnreadable(t *testing.T) {
 	conn := newConsumeClient(t)
 	ctx := context.Background()
 
@@ -207,7 +207,7 @@ func TestLoadAndDeleteErrorsWhenUIDUnreadable(t *testing.T) {
 	}
 
 	var got consumeLowerUID
-	loaded, err := conn.LoadAndDelete(ctx, &got, "s1", "state")
+	loaded, err := conn.GetAndDelete(ctx, &got, "s1", "state")
 	if err == nil {
 		t.Fatalf("want error when the matched node's UID is unreadable, got nil (loaded=%v)", loaded)
 	}

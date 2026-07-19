@@ -60,15 +60,15 @@ func TestInTxn_Typed_WritesStageAndCommit(t *testing.T) {
 			ctx := context.Background()
 
 			items := typed.NewClient[typedItem](client)
-			// Establish schema (TxnContext does not run autoSchema).
-			require.NoError(t, items.Add(ctx, &typedItem{Name: "schema-seed", Qty: 0}))
+			// Establish schema (Txn does not run autoSchema).
+			require.NoError(t, items.Insert(ctx, &typedItem{Name: "schema-seed", Qty: 0}))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			scoped := items.InTxn(txn)
 
 			added := &typedItem{Name: "added", Qty: 1}
-			require.NoError(t, scoped.Add(ctx, added))
+			require.NoError(t, scoped.Insert(ctx, added))
 			require.NotEmpty(t, added.UID, "typed Add in-txn should populate the UID")
 
 			require.NoError(t, scoped.Upsert(ctx, &typedItem{Name: "upserted", Qty: 7}, "name"))
@@ -103,9 +103,9 @@ func TestInTxn_Typed_QueryReadsThroughTxn(t *testing.T) {
 			ctx := context.Background()
 
 			items := typed.NewClient[typedItem](client)
-			require.NoError(t, items.Add(ctx, &typedItem{Name: "findme", Qty: 42}))
+			require.NoError(t, items.Insert(ctx, &typedItem{Name: "findme", Qty: 42}))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			scoped := items.InTxn(txn)
 
@@ -142,13 +142,13 @@ func TestInTxn_Typed_WhereEdgeRunsInTxn(t *testing.T) {
 
 			// Seed two owner/pet pairs; only Alice owns "Fido".
 			fido := &edgePet{Name: "Fido"}
-			require.NoError(t, pets.Add(ctx, fido))
-			require.NoError(t, owners.Add(ctx, &edgeOwner{Name: "Alice", Pets: []*edgePet{fido}}))
+			require.NoError(t, pets.Insert(ctx, fido))
+			require.NoError(t, owners.Insert(ctx, &edgeOwner{Name: "Alice", Pets: []*edgePet{fido}}))
 			rex := &edgePet{Name: "Rex"}
-			require.NoError(t, pets.Add(ctx, rex))
-			require.NoError(t, owners.Add(ctx, &edgeOwner{Name: "Bob", Pets: []*edgePet{rex}}))
+			require.NoError(t, pets.Insert(ctx, rex))
+			require.NoError(t, owners.Insert(ctx, &edgeOwner{Name: "Bob", Pets: []*edgePet{rex}}))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			scopedOwners := owners.InTxn(txn)
 
@@ -170,8 +170,8 @@ func TestInTxn_Typed_WhereEdgeRunsInTxn(t *testing.T) {
 			// and this query would return nothing.
 			scopedPets := pets.InTxn(txn)
 			ghost := &edgePet{Name: "Ghost"}
-			require.NoError(t, scopedPets.Add(ctx, ghost))
-			require.NoError(t, scopedOwners.Add(ctx, &edgeOwner{Name: "Zoe", Pets: []*edgePet{ghost}}))
+			require.NoError(t, scopedPets.Insert(ctx, ghost))
+			require.NoError(t, scopedOwners.Insert(ctx, &edgeOwner{Name: "Zoe", Pets: []*edgePet{ghost}}))
 
 			staged, err := scopedOwners.Query(ctx).
 				WhereEdge("pets", `eq(name, $1)`, "Ghost").
@@ -201,10 +201,10 @@ func TestInTxn_Typed_GuardedReadDeleteCommit(t *testing.T) {
 			owners := typed.NewClient[edgeOwner](client)
 
 			fido := &edgePet{Name: "Fido"}
-			require.NoError(t, pets.Add(ctx, fido))
-			require.NoError(t, owners.Add(ctx, &edgeOwner{Name: "Alice", Pets: []*edgePet{fido}}))
+			require.NoError(t, pets.Insert(ctx, fido))
+			require.NoError(t, owners.Insert(ctx, &edgeOwner{Name: "Alice", Pets: []*edgePet{fido}}))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			scopedOwners := owners.InTxn(txn)
 

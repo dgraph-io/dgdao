@@ -21,7 +21,7 @@ import (
 )
 
 // txnDoc is a node with a unique/upsert scalar, a plain scalar, and a self edge,
-// exercising every TxnContext write and delete method.
+// exercising every Txn write and delete method.
 type txnDoc struct {
 	UID     string    `json:"uid,omitempty"`
 	Name    string    `json:"name,omitempty" dgraph:"index=exact upsert unique"`
@@ -90,7 +90,7 @@ func newValidatorClient(t *testing.T, uri string, v dg.StructValidator) (dg.Clie
 // Test case 1: validation fires inside the transaction. An Upsert of a struct
 // missing a validate:"required" field returns an error naming the field, no UID
 // is assigned, and committing lands nothing.
-func TestTxnContext_ValidationFires(t *testing.T) {
+func TestTxn_ValidationFires(t *testing.T) {
 	for _, tc := range txnURICases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
@@ -107,7 +107,7 @@ func TestTxnContext_ValidationFires(t *testing.T) {
 			valid := &txnUser{Name: "Valid User", Email: "valid@example.com"}
 			require.NoError(t, client.Insert(ctx, valid))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 
@@ -130,7 +130,7 @@ func TestTxnContext_ValidationFires(t *testing.T) {
 
 // Test case 2: several mutations commit atomically as one transaction, and an
 // operation that errors before Commit lands nothing.
-func TestTxnContext_MultiOpCommit(t *testing.T) {
+func TestTxn_MultiOpCommit(t *testing.T) {
 	for _, tc := range txnURICases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
@@ -155,7 +155,7 @@ func TestTxnContext_MultiOpCommit(t *testing.T) {
 
 			// One transaction: drop main's edge, delete the victim node, add a
 			// new node, then commit all three together.
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 			require.NoError(t, txn.DeleteEdge(main.UID, "related"))
@@ -191,7 +191,7 @@ func TestTxnContext_MultiOpCommit(t *testing.T) {
 			var before []txnDoc
 			require.NoError(t, client.Query(ctx, txnDoc{}).Nodes(&before))
 
-			txn2 := client.NewTxnContext(ctx)
+			txn2 := client.NewTxn(ctx)
 			sc2 := client.InTxn(txn2)
 			require.Error(t, sc2.Insert(ctx, &txnDoc{Name: "upserted", Note: "dupe"}),
 				"duplicate unique name is rejected before commit")
@@ -206,7 +206,7 @@ func TestTxnContext_MultiOpCommit(t *testing.T) {
 
 // Test case 3: a duplicate insert of a unique predicate inside the transaction
 // returns a typed *UniqueError, not a raw Dgraph error string.
-func TestTxnContext_UniqueErrorTranslation(t *testing.T) {
+func TestTxn_UniqueErrorTranslation(t *testing.T) {
 	for _, tc := range txnURICases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
@@ -221,7 +221,7 @@ func TestTxnContext_UniqueErrorTranslation(t *testing.T) {
 			first := &txnDoc{Name: "dup", Note: "first"}
 			require.NoError(t, client.Insert(ctx, first))
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			sc := client.InTxn(txn)
 
@@ -239,7 +239,7 @@ func TestTxnContext_UniqueErrorTranslation(t *testing.T) {
 // Test case 4: DeletePredicate clears a scalar predicate's value inside the
 // transaction; after commit has(predicate) is false and the value is gone while
 // the node itself survives.
-func TestTxnContext_DeletePredicate(t *testing.T) {
+func TestTxn_DeletePredicate(t *testing.T) {
 	for _, tc := range txnURICases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.skip {
@@ -255,7 +255,7 @@ func TestTxnContext_DeletePredicate(t *testing.T) {
 			require.NoError(t, client.Insert(ctx, doc))
 			require.NotEmpty(t, doc.UID)
 
-			txn := client.NewTxnContext(ctx)
+			txn := client.NewTxn(ctx)
 			defer txn.Discard()
 			require.NoError(t, txn.DeletePredicate(doc.UID, "note"))
 			require.NoError(t, txn.Commit())
