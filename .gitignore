@@ -32,3 +32,4 @@ load_test/*.json
 
 # git worktrees
 .worktrees/
+.osgrep
