@@ -363,3 +363,29 @@ func TestInTxn_PackageLevelConstructor(t *testing.T) {
 		})
 	}
 }
+
+// TestInTxn_NilTxnErrorsInsteadOfPanicking pins the nil-Txn contract of the
+// package-level constructor: every method on the returned ClientTxn reports
+// an error (and Query returns nil, as it does for a failed transaction)
+// rather than dereferencing the nil Txn on first use.
+func TestInTxn_NilTxnErrorsInsteadOfPanicking(t *testing.T) {
+	ctx := context.Background()
+	sc := dg.InTxn(nil)
+	require.NotNil(t, sc, "InTxn(nil) should still return a usable-but-erroring client")
+
+	require.Error(t, sc.Insert(ctx, &txnDoc{Name: "x"}))
+	require.Error(t, sc.Upsert(ctx, &txnDoc{Name: "x"}))
+	require.Error(t, sc.Update(ctx, &txnDoc{UID: "0x1", Name: "x"}))
+	require.Error(t, sc.Delete(ctx, []string{"0x1"}))
+	require.Error(t, sc.Get(ctx, &txnDoc{}, "0x1"))
+
+	_, err := sc.GetOrInsert(ctx, &txnDoc{Name: "x"})
+	require.Error(t, err)
+	var got txnDoc
+	_, err = sc.GetAndDelete(ctx, &got, "x")
+	require.Error(t, err)
+	_, err = sc.QueryRaw(ctx, "{ q(func: has(name)) { uid } }", nil)
+	require.Error(t, err)
+
+	require.Nil(t, sc.Query(ctx, &txnDoc{}), "Query mirrors the failed-transaction contract and returns nil")
+}
