@@ -64,6 +64,7 @@ func TestEntity_MarshalJSONThroughPointerEmitsRecord(t *testing.T) {
 // deliberate.
 func TestEntity_MarshalJSONOnValueEmitsEmptyObject(t *testing.T) {
 	e := agentEntity{Entity: AsEntity(&agentRecord{UID: "0x1", Name: "smith"})}
+	//nolint:staticcheck // SA9005 flags the no-exported-fields marshal — the exact pitfall under test
 	out, err := json.Marshal(e)
 	if err != nil {
 		t.Fatalf("Marshal: %v", err)
