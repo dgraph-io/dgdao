@@ -4,6 +4,14 @@
 
 - fix: `InTxn(nil)` now returns a `ClientTxn` whose methods report an error — the same
   deferred-error contract `NewTxn` uses for pool failures — instead of panicking on first use
+- fix: the "namespace is not supported" warning now fires only for remote (`dgraph://`) clients;
+  embedded (`file://`) clients honor `WithNamespace`, opening the given namespace ID with full
+  isolation from the default namespace
+- docs: close the README's public-API coverage gaps — the `WithCacheSizeMB`, `WithMaxRecvMsgSize`,
+  `WithGRPCDialOption`, and `WithNamespace` options, the `Defaulter` hook, `NewValidator`, typed
+  `*UniqueError` handling, a `QueryRaw` section, the embedded-engine singleton limitation
+  (`ErrSingletonOnly`, `Shutdown`), the `Entity[R]`/`AsRecord` generated-entity bridge, and a typed
+  query capability index covering the full `Query[T]` builder surface
 - docs: catch `DEFAULTER.md` and `VALIDATOR.md` up to the 0.9.0 renames (`GetOrInsert`,
   `GetAndDelete`; drop the deleted `InsertRaw`, list `GetOrInsert` among the validated writes)
 - test: cover the `Entity[R]` base directly — record adoption, the pointer-receiver `MarshalJSON`

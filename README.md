@@ -168,6 +168,50 @@ Sets the maximum number of edges to traverse when querying. The default is 10 ed
 client, err := dg.NewClient(uri, dg.WithMaxEdgeTraversal(20))
 ```
 
+#### WithCacheSizeMB(int)
+
+Sets the memory cache size for an embedded (`file://`) database. Dgraph itself often defaults to a 1
+GB cache; to minimize resource usage without configuration, dgdao defaults to 64 MB. For a system
+with a moderate amount of RAM (8-16 GB), 256 MB to 1 GB is a good starting point. Ignored for
+`dgraph://` URIs.
+
+```go
+client, err := dg.NewClient("file:///tmp/dgdao", dg.WithCacheSizeMB(512))
+```
+
+#### WithMaxRecvMsgSize(int)
+
+Raises the maximum gRPC receive message size, in bytes, for remote (`dgraph://`) connections, so
+large query responses — wide subgraphs, vector results — do not exceed gRPC's default 4 MB limit.
+Ignored for `file://` URIs.
+
+```go
+// Allow responses up to 32 MB
+client, err := dg.NewClient(uri, dg.WithMaxRecvMsgSize(32<<20))
+```
+
+#### WithGRPCDialOption(grpc.DialOption)
+
+Appends a custom `grpc.DialOption` applied when opening a remote (`dgraph://`) connection — the
+escape hatch for dial settings the dedicated options don't cover: TLS transport credentials,
+interceptors, keepalive parameters, and so on. May be supplied multiple times; the options apply in
+the order given. Ignored for `file://` URIs.
+
+```go
+client, err := dg.NewClient(uri,
+    dg.WithGRPCDialOption(grpc.WithTransportCredentials(creds)))
+```
+
+#### WithNamespace(string)
+
+Selects the numeric namespace an embedded (`file://`) database opens, for multi-tenant separation
+within one engine. Namespace support for remote (`dgraph://`) Dgraph v25 connections is not yet
+wired up; the client logs a warning when the option is set.
+
+```go
+client, err := dg.NewClient("file:///tmp/dgdao", dg.WithNamespace("1"))
+```
+
 #### WithLogger(logr.Logger)
 
 Configures structured logging with custom verbosity levels. By default, logging is disabled.
@@ -204,7 +248,9 @@ validate.RegisterValidation("custom", func(fl validator.FieldLevel) bool {
 client, err := dg.NewClient(uri, dg.WithValidator(validate))
 ```
 
-See the [validator test](validate_test.go) for more examples.
+`dg.NewValidator()` returns a `*validator.Validate` with default settings when you don't need custom
+registrations. For the full set of validated operations and error-handling patterns, see
+[VALIDATOR.md](./VALIDATOR.md) and the [validator test](validate_test.go).
 
 #### SelfValidator (self-driven validation)
 
@@ -245,6 +291,22 @@ func (e *Event) ValidateWith(ctx context.Context, v dg.StructValidator) error {
 ```
 
 Plain structs are unaffected — they still flow through the configured `StructValidator` as before.
+
+#### Defaulter (defaults before validation)
+
+A model can populate default field values before a write by implementing `Defaulter`:
+
+```go
+type Defaulter interface {
+    ApplyDefaults(ctx context.Context) error
+}
+```
+
+dgdao calls `ApplyDefaults` in `Insert`, `Upsert`, `Update`, and `GetOrInsert` — before validation,
+so a defaulted field can satisfy a `validate:"required"` rule. Implementations should set a field
+only when it is still the zero value, so a caller-provided value is never overwritten. See
+[DEFAULTER.md](./DEFAULTER.md) for the full contract, including monotonic fields such as `UpdatedAt`
+timestamps.
 
 You can combine multiple options:
 
@@ -434,6 +496,19 @@ if err != nil {
 
 ```
 
+A write that would violate a `unique` predicate returns a typed `*UniqueError` carrying the node
+type, field, and conflicting value, so callers can branch on the conflict rather than parse an error
+string:
+
+```go
+if err := client.Insert(ctx, &user); err != nil {
+    var uerr *dg.UniqueError
+    if errors.As(err, &uerr) {
+        log.Printf("duplicate %s: %s = %v", uerr.NodeType, uerr.Field, uerr.Value)
+    }
+}
+```
+
 ### Updating Data
 
 To update an existing node, first retrieve it, modify it, then save it back.
@@ -516,6 +591,34 @@ if err != nil {
     log.Fatalf("Failed to query sorted users: %v", err)
 }
 ```
+
+### Raw DQL Queries (`QueryRaw`)
+
+When the query builder can't express what you need, `QueryRaw` executes a DQL string directly and
+returns the response JSON. Variables ride in a map and require the named-query form:
+
+```go
+resp, err := client.QueryRaw(ctx, `query q($role: string) {
+    q(func: type(User)) @filter(eq(role, $role)) {
+        uid
+        name
+    }
+}`, map[string]string{"$role": "Admin"})
+if err != nil {
+    log.Fatalf("Failed to run raw query: %v", err)
+}
+
+var out struct {
+    Q []User `json:"q"`
+}
+if err := json.Unmarshal(resp, &out); err != nil {
+    log.Fatalf("Failed to decode raw query result: %v", err)
+}
+```
+
+Pass `nil` vars for a static query. `QueryRaw` is part of `ClientCore`, so it is also available on a
+transaction-scoped `ClientTxn` — where it observes writes already staged on the transaction — and on
+the typed `Client[T]`.
 
 ### Advanced Querying
 
@@ -837,10 +940,31 @@ count, and `IterNodes()` returns an iterator of `*T`.
       Execute(ctx)
   ```
 
-The companion `typed/filter` and `typed/search` packages add a parameterised filter-expression
-builder and helpers for merging ranked results across blocks.
+### Typed capability index
 
-For the full API, the design rationale, and runnable examples, see the package documentation
+The full `Query[T]` builder surface, grouped by concern:
+
+| Concern             | Methods                                                                                                                                               |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Root narrowing      | `UID(uid)` roots at one node; `RootFunc(expr)` replaces the default `type(<T>)` root; `Vars(funcDef, vars)` parameterizes the query                   |
+| Filtering           | `Filter(frag, params...)`, `OrGroup(subs...)`, `WhereEdge(pred, filter, params...)`, `WhereAnyOfText` / `WhereAllOfText(pred, term)` (full-text)      |
+| Result shaping      | `Cascade(preds...)` drops nodes missing predicates; `All(depth)` overrides the client's edge-traversal depth per query                                |
+| Ordering and paging | `OrderAsc` / `OrderDesc(clause)`, `Limit(n)`, `Offset(n)`, `After(uid)` (cursor pagination)                                                           |
+| Terminals           | `Nodes()` returns `[]T`; `First()` returns `*T` (nil when nothing matched); `NodesAndCount()` adds the total count; `IterNodes()` streams `*T` pages  |
+| Batching            | `MultiQuery[T]`: `Add(name, q)`, `Execute(ctx)` (one round-trip, results keyed by block name), `BlockNames()`                                         |
+| Var blocks          | `Name(blockName)` renames the block; `As(varName)`, `Var()`, and `GroupBy(pred)` transition to a `RawQuery` for query-variable and aggregation blocks |
+| Escape hatches      | `String()` renders the DQL without executing; `Raw()` exposes the underlying `*dgman.Query`; `Client[T].QueryRaw(ctx, q, vars)` runs raw DQL          |
+
+`String()` and `Raw()` do not reflect `WhereEdge` constraints — those resolve in a server-side
+pre-pass only when a terminal runs.
+
+Two smaller seams round out the package: `typed.SetTracer` installs a `typed.Tracer` that receives a
+`Span` per database operation (dgdao-telemetry ships the OpenTelemetry implementation), and the
+companion `typed/filter` and `typed/search` packages add a parameterised filter-expression builder
+(`filter.Builder`, `filter.ParseString`, `filter.ParseUUID`) and ranked-result merging across blocks
+(`search.MergeByID`).
+
+For the design rationale and runnable examples, see the package documentation
 (`go doc github.com/dgraph-io/dgdao/typed`) and the `example_test.go` files under `typed/`.
 
 ## Automatic Similarity Search (`SimString`)
@@ -1089,6 +1213,10 @@ dgdao has a few limitations to be aware of:
 
 - **Schema evolution**: While dgdao supports schema inference through tags, evolving an existing
   schema with new fields requires careful consideration to avoid data inconsistencies.
+- **One embedded engine per process**: `file://` clients share a single embedded Dgraph engine, so
+  only one data directory can be open at a time — a second `NewClient` with a different `file://`
+  path fails with `ErrSingletonOnly`. `Close` the client (or call `dg.Shutdown()`) to release the
+  engine before opening another directory. Remote `dgraph://` clients have no such restriction.
 
 ## CLI Commands and Examples
 
@@ -1138,6 +1266,14 @@ go install github.com/dgraph-io/dgdao-gen/cmd/dgdao-gen@latest
 ```
 
 Generated code imports `github.com/dgraph-io/dgdao-gen/wrap`.
+
+The runtime side of the generator lives in dgdao itself. Generated entity types embed the generic
+`Entity[R]` base: `AsEntity(r)` adopts a record struct into the base, `Record()` returns it, and the
+base contributes JSON marshaling and validation. At the client boundary, `AsRecord` unwraps any
+value whose `Record()` method returns a type implementing the `Record` interface (the generated
+`RecordTypeName()` marker), so entities — single values or slices — pass straight to `Insert`,
+`Upsert`, `Update`, `Get`, and the query methods. Plain structs never match the probe and flow
+through untouched.
 
 ### dgdao-migrate
 
