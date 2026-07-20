@@ -19,9 +19,9 @@ dgdao calls `ApplyDefaults` on the model before running struct validation, on th
 - `Insert()`
 - `Upsert()`
 - `Update()`
-- `LoadOrStore()`
+- `GetOrInsert()`
 
-`LoadAndDelete()` is a read-then-delete operation and never calls `ApplyDefaults`.
+`GetAndDelete()` is a read-then-delete operation and never calls `ApplyDefaults`.
 
 Because defaults run first, a field that `ApplyDefaults` sets can satisfy a `validate:"required"`
 tag on the same field, even though the caller left it zero.

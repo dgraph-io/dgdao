@@ -76,9 +76,9 @@ type User struct {
 The validator will automatically run before these operations:
 
 - `Insert()` - Validates structs before insertion
-- `InsertRaw()` - Validates structs before raw insertion
 - `Update()` - Validates structs before update
 - `Upsert()` - Validates structs before upsert
+- `GetOrInsert()` - Validates structs before the insert-if-absent write
 
 ```go
 user := &User{
