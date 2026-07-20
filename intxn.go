@@ -32,7 +32,14 @@ type ClientTxn struct {
 // ClientTxn constructor: a ClientTxn can be built from a live *Txn and
 // nothing else. Client.InTxn delegates here; the typed layer calls it
 // directly.
+//
+// A nil tx yields a ClientTxn whose every method returns an error — the same
+// deferred-error contract NewTxn uses for pool failures — rather than
+// panicking on first use.
 func InTxn(tx *Txn) *ClientTxn {
+	if tx == nil {
+		return &ClientTxn{tx: &Txn{initErr: errors.New("InTxn: nil Txn")}}
+	}
 	return &ClientTxn{tx: tx}
 }
 
