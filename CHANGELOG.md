@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-20 - Version 0.9.1
+
+- fix: `InTxn(nil)` now returns a `ClientTxn` whose methods report an error — the same
+  deferred-error contract `NewTxn` uses for pool failures — instead of panicking on first use
+- docs: catch `DEFAULTER.md` and `VALIDATOR.md` up to the 0.9.0 renames (`GetOrInsert`,
+  `GetAndDelete`; drop the deleted `InsertRaw`, list `GetOrInsert` among the validated writes)
+- test: cover the `Entity[R]` base directly — record adoption, the pointer-receiver `MarshalJSON`
+  pitfall, lazy `UnmarshalJSON` allocation, `Validate` delegation, and the `AsRecord` bridge over a
+  generated-style entity
+
 ## 2026-07-19 - Version 0.9.0
 
 - breaking: rename `TxnContext` -> `Txn` and `NewTxnContext` -> `NewTxn`
