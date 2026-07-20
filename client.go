@@ -310,7 +310,7 @@ func NewClient(uri string, opts ...ClientOpt) (Client, error) {
 	}
 
 	// TODO: implement namespace support for v25
-	if options.namespace != "" {
+	if options.namespace != "" && strings.HasPrefix(uri, dgraphURIPrefix) {
 		options.logger.Info("Warning, namespace is set, but it is not supported in this version")
 	}
 
